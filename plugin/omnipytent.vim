@@ -1,0 +1,10 @@
+command! -range -nargs=* OP <line1>,<line2>call omnipytent#invoke(0, <count>, <f-args>)
+command! -range -nargs=* OP2 <line1>,<line2>call omnipytent#invoke(2, <count>, <f-args>)
+"command! -range -complete=customlist,omnipytent#completeIncludeTaskArgs -nargs=* OP call omnipytent#invoke(<line1>, <line2>, <count>, <f-args>)
+"command! -nargs=0 OPgrab call omnipytent#grabIntegrakeFile()
+command! -nargs=? OPedit call omnipytent#editTask(0, <q-args>)
+command! -nargs=? OP2edit call omnipytent#editTask(2, <q-args>)
+"command! -complete=customlist,omnipytent#complete -nargs=? OP2edit call omnipytent#editTask(2, <q-args>)
+"command! -complete=customlist,omnipytent#complete -nargs=? OP2sedit call omnipytent#editTask_split(2, <q-args>)
+"command! -complete=customlist,omnipytent#complete -nargs=? OP2vedit call omnipytent#editTask_vsplit(2, <q-args>)
+
