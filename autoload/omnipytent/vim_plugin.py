@@ -3,16 +3,16 @@ import vim
 import re
 
 from .tasks_file import get_tasks_file
+from .tasks import invoke_with_dependencies
 
 
 def _api_entry_point(command):
     if command == 'invoke':
         args = vim.eval('a:000')
-        ctx = None
         if 0 == len(args):
-            prompt_and_invoke(ctx)
+            prompt_and_invoke()
         else:
-            invoke(ctx, *args)
+            invoke(*args)
     elif command == 'edit':
         split_mode = vim.eval('a:splitMode')
         args = vim.eval('a:000')
@@ -21,15 +21,16 @@ def _api_entry_point(command):
         raise NotImplementedError()
 
 
-def prompt_and_invoke(ctx):
+def prompt_and_invoke():
     raise NotImplementedError()
 
 
-def invoke(ctx, taskname, *args):
+def invoke(taskname, *args):
     tasks_file = get_tasks_file()
     tasks_file.load_if_stale()
     task = tasks_file[taskname]
-    task.invoke(ctx, *args)
+    invoke_with_dependencies(task, args)
+    # task.invoke(ctx, *args)
 
 
 def edit_task(split_mode, taskname):
@@ -37,6 +38,7 @@ def edit_task(split_mode, taskname):
     if split_mode:
         vim.command(split_mode)
     tasks_file.open(taskname)
+
 
 def _api_complete(include_task_args):
     arg_lead = vim.eval('a:argLead')

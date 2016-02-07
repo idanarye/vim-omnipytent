@@ -15,7 +15,7 @@ class TasksFile:
         vim.command('edit %s' % self.filename)
         if not os.path.exists(self.filename):
             vim.current.buffer[:] = ['import vim',
-                                     'from omnipytent import task',
+                                     'from omnipytent import task, ctask',
                                      '']
             if on_task:
                 self._create_task_in_current_buffer(on_task)
