@@ -1,2 +1,4 @@
-from dsl import task, ctask
+__all__ = ['task', 'ctask', 'otask']
+
+from dsl import task, ctask, otask
 

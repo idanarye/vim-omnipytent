@@ -10,12 +10,13 @@ class TasksFile:
     def __init__(self):
         self.filename = self.default_name()
         self.last_modified = None
+        self.tasks_cache = {}
 
     def open(self, on_task=None):
         vim.command('edit %s' % self.filename)
         if not os.path.exists(self.filename):
             vim.current.buffer[:] = ['import vim',
-                                     'from omnipytent import task, ctask',
+                                     'from omnipytent import *',
                                      '']
             if on_task:
                 self._create_task_in_current_buffer(on_task)
@@ -37,7 +38,7 @@ class TasksFile:
         last_line = len(vim.current.buffer) - 1
         while 0 < last_line and not vim.current.buffer[last_line].strip():
             last_line -= 1
-        vim.current.buffer[last_line + 1:] = ['', '', '@task', 'def %s():' % taskname, '    ', '']
+        vim.current.buffer[last_line + 1:] = ['', '', '@ctask', 'def %s(ctx):' % taskname, '    ', '']
         vim.command(str(len(vim.current.buffer) - 1))
         vim.command('startinsert!')
 
@@ -48,6 +49,10 @@ class TasksFile:
             if isinstance(value, Task):
                 self.tasks[ident] = value
         self.last_modified = os.path.getmtime(self.filename)
+        self.tasks_cache = self.tasks_cache
+        for key in self.tasks_cache.keys():
+            if key not in self.tasks:
+                del self.tasks_cache[key]
 
     def __getitem__(self, key):
         return self.tasks[key]

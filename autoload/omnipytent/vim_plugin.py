@@ -29,7 +29,7 @@ def invoke(taskname, *args):
     tasks_file = get_tasks_file()
     tasks_file.load_if_stale()
     task = tasks_file[taskname]
-    invoke_with_dependencies(task, args)
+    invoke_with_dependencies(tasks_file, task, args)
     # task.invoke(ctx, *args)
 
 

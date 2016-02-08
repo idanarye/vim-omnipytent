@@ -1,7 +1,9 @@
 
 class InvocationContext:
-    def __init__(self):
+    def __init__(self, task_file, main_task):
         self.dep_data = {}
+        self.task_file = task_file
+        self.main_task = main_task
 
     def for_task(self, task):
         return TaskContext(self, task)
@@ -18,6 +20,21 @@ class TaskContext:
 
     def pass_data(self, data):
         self.parent.dep_data[self.task] = data
+
+    @property
+    def cache(self):
+        try:
+            return self.parent.task_file.tasks_cache[self.task.name]
+        except KeyError:
+            return self.parent.task_file.tasks_cache.setdefault(self.task.name, TaskCache())
+
+    @property
+    def is_main(self):
+        return self.parent.main_task == self.task
+
+
+class TaskCache:
+    pass
 
 
 class DepDataFetcher:
