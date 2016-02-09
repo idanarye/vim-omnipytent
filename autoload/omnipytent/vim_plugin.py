@@ -40,7 +40,7 @@ def edit_task(split_mode, taskname):
 
 
 def _api_complete(include_task_args):
-    arg_lead = vim.eval('a:argLead')
+    # arg_lead = vim.eval('a:argLead')
     cmd_line = vim.eval('a:cmdLine')
     cursor_pos = int(vim.eval('a:cursorPos'))
 
@@ -57,5 +57,6 @@ def _api_complete(include_task_args):
     else:  # arguments completion
         if not include_task_args:
             return []
-        raise NotImplementedError()
+        task = tasks_file[parts[1]]
+        return task.completions(parts)
 

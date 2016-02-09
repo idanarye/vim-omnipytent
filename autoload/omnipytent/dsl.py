@@ -1,6 +1,6 @@
 import abc
 
-from .tasks import Task
+from .tasks import Task, OptionsTask
 
 
 def _fluent(func):
@@ -43,6 +43,11 @@ class TaskDeclarator:
     @_fluent
     def _deps(self, *deps):
         self._dependencies.extend(deps)
+
+    @property
+    @_fluent
+    def options(self):
+        self._task_class = OptionsTask
 
 
 task = TaskDeclarator()
