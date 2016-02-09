@@ -1,5 +1,7 @@
 import vim
 
+from contextlib import contextmanager
+
 
 def input_list(prompt, options):
     take_from = 0
@@ -36,4 +38,42 @@ def input_list(prompt, options):
             return None
         else:
             return options_slice[chosen_option_number - 1]
+
+
+@contextmanager
+def __populate_vimlist(function_start, action=' '):
+    items = []
+
+    def adder(filename=None, lnum=None, text=None, col=None, vcol=None, bufnr=None, pattern=None, nr=None, type=None):
+        item = {}
+        if filename is not None:
+            item['filename'] = filename
+        if lnum is not None:
+            item['lnum'] = lnum
+        if text is not None:
+            item['text'] = text
+        if col is not None:
+            item['col'] = col
+        if vcol is not None:
+            item['vcol'] = vcol
+        if bufnr is not None:
+            item['bufnr'] = bufnr
+        if pattern is not None:
+            item['pattern'] = pattern
+        if nr is not None:
+            item['nr'] = nr
+        if type is not None:
+            item['type'] = type
+        items.append(item)
+
+    yield adder
+    vim.command('call %s%s, %s)' % (function_start, repr(items), repr(action)))
+
+
+def populate_quickfix():
+    return __populate_vimlist('setqflist(')
+
+
+def populate_loclist(window=0):
+    return __populate_vimlist('setloclist(%s, ' % window)
 
