@@ -38,7 +38,7 @@ class TasksFile:
         last_line = len(vim.current.buffer) - 1
         while 0 < last_line and not vim.current.buffer[last_line].strip():
             last_line -= 1
-        vim.current.buffer[last_line + 1:] = ['', '', '@ctask', 'def %s(ctx):' % taskname, '    ', '']
+        vim.current.buffer[last_line + 1:] = ['', '', '@task', 'def %s(ctx):' % taskname, '    ', '']
         vim.command(str(len(vim.current.buffer) - 1))
         vim.command('startinsert!')
 

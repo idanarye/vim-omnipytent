@@ -30,7 +30,6 @@ def invoke(taskname, *args):
     tasks_file.load_if_stale()
     task = tasks_file[taskname]
     invoke_with_dependencies(tasks_file, task, args)
-    # task.invoke(ctx, *args)
 
 
 def edit_task(split_mode, taskname):

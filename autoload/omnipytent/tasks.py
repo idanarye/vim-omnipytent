@@ -1,8 +1,6 @@
 import abc
-from collections import OrderedDict
 
 from context import InvocationContext
-from util import input_list
 
 
 class Task:
@@ -12,7 +10,7 @@ class Task:
         self.dependencies = []
 
     def invoke(self, ctx, *args):
-        raise NotImplementedError()
+        self.func(ctx.for_task(self), *args)
 
     def __repr__(self):
         return '<Task: %s>' % self.name
@@ -32,50 +30,6 @@ class Task:
             return result
 
         return wrapper
-
-
-class SimpleTask(Task):
-    def invoke(self, ctx, *args):
-        self.func(*args)
-
-
-class ContextTask(Task):
-    def invoke(self, ctx, *args):
-        self.func(ctx.for_task(self), *args)
-
-class OptionsTask(Task):
-    def invoke(self, ctx, *args):
-        ctx = ctx.for_task(self)
-        options = OrderedDict()
-        ctx.opt = self.OptionAdder(options.__setitem__)
-        self.func(ctx, *args)
-
-        if ctx.is_main:
-            chosen_item = None
-        else:
-            chosen_item = getattr(ctx.cache, 'chosen_item', None)
-
-        if chosen_item not in options:  # includes the possibility that chosen_item is None
-            if 0 == len(options):
-                raise Exception('No options set in %s' % self)
-            elif 1 == len(options):
-                ctx.pass_data(next(iter(options.values())))
-                return
-            chosen_item = input_list('Choose %s' % self, options.keys())
-            if chosen_item:
-                ctx.cache.chosen_item = chosen_item
-
-        ctx.pass_data(options.get(chosen_item, None))
-
-    class OptionAdder:
-        __setter = [None]
-        def __init__(self, setter):
-            self.__setter[0] = setter
-
-        def __setattr__(self, name, value):
-            if name.startswith('_'):
-                raise KeyError(name)
-            self.__setter[0](name, value)
 
 
 def invoke_with_dependencies(tasks_file, task, args):
