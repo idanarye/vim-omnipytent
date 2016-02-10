@@ -35,30 +35,26 @@ class OptionsTask(Task):
     def __init__(self, func):
         super(OptionsTask, self).__init__(func)
 
-        self.__arg_len = len(inspect.getargspec(func).args)
-        if 1 < self.__arg_len:
+        self.__func_args_set = set(inspect.getargspec(func).args)
+        if 1 < len(self.__func_args_set):
             raise Exception('Options task %s should have 0 or 1 arg' % self)
 
         self.complete(self.complete_options)
 
-    @staticmethod
-    def __filter_hidden(target):
-        if isinstance(target, dict):
-            return target.__class__((k, v) for k, v in target.items() if not k.startswith('_'))
-        else:
-            return (name for name in target if not name.startswith('_'))
+    def __varname_filter(self, target):
+        return not target.startswith('_') and target not in self.__func_args_set
 
     def complete_options(self, parts):
-        return self.__filter_hidden(self.func.func_code.co_varnames)
+        return filter(self.__varname_filter, self.func.func_code.co_varnames)
 
     def invoke(self, ctx, *args):
         ctx = ctx.for_task(self)
-        if self.__arg_len == 0:
+        if len(self.__func_args_set) == 0:
             options = function_locals(self.func)
         else:
             options = function_locals(self.func, ctx)
 
-        options = self.__filter_hidden(options)
+        options = {k: v for k, v in options.items() if self.__varname_filter(k)}
 
         if 0 == len(args):
             with ctx.user_choose() as opts:
