@@ -1,7 +1,3 @@
-from contextlib import contextmanager
-from collections import OrderedDict
-
-from util import input_list
 
 
 class InvocationContext:
@@ -36,39 +32,6 @@ class TaskContext:
     @property
     def is_main(self):
         return self.parent.main_task == self.task
-
-    @contextmanager
-    def user_choose(self):
-        options = OrderedDict()
-        yield OptionAdder(options.__setitem__)
-        if self.is_main:
-            chosen_item = None
-        else:
-            chosen_item = getattr(self.cache, 'chosen_item', None)
-
-        if chosen_item not in options:  # includes the possibility that chosen_item is None
-            if 0 == len(options):
-                raise Exception('No options set in %s' % self)
-            elif 1 == len(options):
-                self.pass_data(next(iter(options.values())))
-                return
-            chosen_item = input_list('Choose %s' % self, options.keys())
-            if chosen_item:
-                self.cache.chosen_item = chosen_item
-
-        self.pass_data(options.get(chosen_item, None))
-
-
-class OptionAdder:
-    __setter = [None]
-
-    def __init__(self, setter):
-        self.__setter[0] = setter
-
-    def __setattr__(self, name, value):
-        if name.startswith('_'):
-            raise KeyError(name)
-        self.__setter[0](name, value)
 
 
 class TaskCache:

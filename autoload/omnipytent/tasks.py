@@ -2,6 +2,7 @@ import inspect
 
 from context import InvocationContext
 from hacks import function_locals
+from util import input_list
 
 
 class Task(object):
@@ -54,15 +55,29 @@ class OptionsTask(Task):
         else:
             options = function_locals(self.func, ctx)
 
-        options = {k: v for k, v in options.items() if self.__varname_filter(k)}
+        # options = {k: v for k, v in options.items() if self.__varname_filter(k)}
 
         if 0 == len(args):
-            with ctx.user_choose() as opts:
-                for key, value in options.items():
-                    opts.__setattr__(key, value)
+            if ctx.is_main:
+                chosen_item = None
+            else:
+                chosen_item = getattr(ctx.cache, 'chosen_item', None)
+
+            options_keys = list(filter(self.__varname_filter, options.keys()))
+            if chosen_item not in options_keys:  # includes the possibility that chosen_item is None
+                if 0 == len(options):
+                    raise Exception('No options set in %s' % self)
+                elif 1 == len(options):
+                    ctx.pass_data(next(iter(options.values())))
+                    return
+                chosen_item = input_list('Choose %s' % self, options_keys)
+                if chosen_item:
+                    ctx.cache.chosen_item = chosen_item
+
+            ctx.pass_data(options.get(chosen_item, None))
         elif 1 == len(args):
             chosen_item = args[0]
-            if chosen_item in options:
+            if self.__varname_filter(chosen_item) and chosen_item in options:
                 ctx.cache.chosen_item = chosen_item
                 ctx.pass_data(options[chosen_item])
             else:
