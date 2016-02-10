@@ -10,7 +10,7 @@ class Task(object):
         self.func = func
         self.name = func.__name__
         self.dependencies = []
-        self._completers = []
+        self.completers = []
 
     def invoke(self, ctx, *args):
         self.func(ctx.for_task(self), *args)
@@ -20,7 +20,7 @@ class Task(object):
 
     def completions(self, parts):
         result = set()
-        for completer in self._completers:
+        for completer in self.completers:
             result.update(completer(parts))
         return sorted(result)
 
@@ -29,7 +29,7 @@ class Task(object):
             result = func(parts)
             result = (item for item in result if item.startswith(parts[-1]))
             return result
-        self._completers.append(completer)
+        self.completers.append(completer)
 
 
 class OptionsTask(Task):

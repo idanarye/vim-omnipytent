@@ -20,6 +20,7 @@ class TaskDeclarator:
 
     def __init__(self):
         self._dependencies = []
+        self._completers = []
 
     def _dup_if_orig(self):
         if self is self._orig:
@@ -29,6 +30,7 @@ class TaskDeclarator:
 
     def _adjust_task(self, task):
         task.dependencies.extend(self._dependencies)
+        task.completers.extend(self._completers)
 
     def _decorate(self, func):
         result = self._task_class(func)
@@ -43,6 +45,10 @@ class TaskDeclarator:
     @_fluent
     def _deps(self, *deps):
         self._dependencies.extend(deps)
+
+    @_fluent
+    def complete(self, completer):
+        self._completers.append(completer)
 
     @property
     @_fluent
