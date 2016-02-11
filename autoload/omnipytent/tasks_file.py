@@ -3,7 +3,7 @@ import sys
 import os.path
 import imp
 
-from tasks import Task
+from .tasks import Task
 
 
 class TasksFile:
@@ -28,7 +28,7 @@ class TasksFile:
                     self.load()
                 try:
                     task = self.tasks[on_task]
-                    line = task.func.func_code.co_firstlineno
+                    line = task.func.__code__.co_firstlineno
                     vim.command('edit %s' % self.filename)
                     vim.command(str(line))
                 except KeyError:
@@ -45,7 +45,11 @@ class TasksFile:
     def load(self):
         self.tasks = {}
         self.module = imp.load_source('_omnypytent_tasksfile', self.filename)
-        for ident, value in self.module.__dict__.iteritems():
+        try:
+            module_iteritems = self.module.__dict__.iteritems()
+        except AttributeError:
+            module_iteritems = self.module.__dict__.items()
+        for ident, value in module_iteritems:
             if isinstance(value, Task):
                 self.tasks[ident] = value
         self.last_modified = os.path.getmtime(self.filename)

@@ -1,8 +1,8 @@
 import inspect
 
-from context import InvocationContext
-from hacks import function_locals
-from util import input_list
+from .context import InvocationContext
+from .hacks import function_locals
+from .util import input_list
 
 
 class Task(object):
@@ -46,7 +46,7 @@ class OptionsTask(Task):
         return not target.startswith('_') and target not in self.__func_args_set
 
     def complete_options(self, parts):
-        return filter(self.__varname_filter, self.func.func_code.co_varnames)
+        return filter(self.__varname_filter, self.func.__code__.co_varnames)
 
     def invoke(self, ctx, *args):
         ctx = ctx.for_task(self)

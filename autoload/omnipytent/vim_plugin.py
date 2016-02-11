@@ -1,9 +1,14 @@
 import vim
 
 import re
+import os
 
-from .tasks_file import get_tasks_file
+from .tasks_file import TasksFile, get_tasks_file
 from .tasks import invoke_with_dependencies
+
+
+def _tasks_file_name():
+    return TasksFile.default_name()
 
 
 def _api_entry_point(command):

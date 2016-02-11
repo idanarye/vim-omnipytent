@@ -1,4 +1,4 @@
-import abc
+import types
 
 from .tasks import Task, OptionsTask
 
@@ -38,7 +38,7 @@ class TaskDeclarator:
         return result
 
     def __call__(self, *args):
-        if len(args) == 1 and args[0].__class__ == abc.types.FunctionType:
+        if len(args) == 1 and args[0].__class__ == types.FunctionType:
             return self._decorate(args[0])
         return self._deps(*args)
 
