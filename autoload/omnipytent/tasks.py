@@ -13,7 +13,11 @@ class Task(object):
         self.completers = []
 
     def invoke(self, ctx, *args):
-        self.func(ctx.for_task(self), *args)
+        ctx = ctx.for_task(self)
+        if ctx.is_main:
+            self.func(ctx, *args)
+        else:
+            self.func(ctx)
 
     def __repr__(self):
         return '<Task: %s>' % self.name
