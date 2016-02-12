@@ -1,6 +1,43 @@
 import vim
 
 from contextlib import contextmanager
+import json
+
+def vim_repr(value):
+    if isinstance(value, bool):
+        return str(int(value))  # 0 or 1
+
+    # Python 2 only types
+    try:
+        if isinstance(value, long):
+            return str(value)
+        if isinstance(value, unicode):
+            value = str(value)
+            pass
+    except NameError:
+        pass
+
+    if isinstance(value, int):
+        return str(value)
+
+    if isinstance(value, float):
+        result = str(value)
+        if 'e' in result and '.' not in result:
+            result = result.replace('e', '.0e')
+        return result
+
+    if isinstance(value, (str, bytes)):
+        return json.dumps(value)
+
+    if isinstance(value, (list, set)):
+        return '[%s]' % ', '.join(map(vim_repr, value))
+
+    if isinstance(value, dict):
+        try:
+            value_iteritems = value.iteritems()
+        except AttributeError:
+            value_iteritems = value.items()
+        return '{%s}' % ', '.join('%s: %s' % (vim_repr(k), vim_repr(v)) for k, v in value_iteritems)
 
 
 def input_list(prompt, options):
@@ -30,7 +67,7 @@ def input_list(prompt, options):
                                     ' ' * (number_length - len(index_text)),
                                     option)
         list_for_input_query = list(list_for_input_query_generator())
-        chosen_option_number = int(vim.eval("inputlist(%s)" % repr(list_for_input_query)))
+        chosen_option_number = int(vim.eval("inputlist(%s)" % vim_repr(list_for_input_query)))
 
         if more_items_remaining and chosen_option_number == len(options_slice) + 1:
             print(' ')
@@ -67,7 +104,7 @@ def __populate_vimlist(function_start, action=' '):
         items.append(item)
 
     yield adder
-    vim.command('call %s%s, %s)' % (function_start, repr(items), repr(action)))
+    vim.command('call %s%s, %s)' % (function_start, vim_repr(items), vim_repr(action)))
 
 
 def populate_quickfix():
