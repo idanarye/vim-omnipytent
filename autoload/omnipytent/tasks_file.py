@@ -43,6 +43,12 @@ class TasksFile:
         vim.command('startinsert!')
 
     def load(self):
+        # Clear old stuff(old tasks) from the module
+        try:
+            self.module.__dict__.clear()
+        except AttributeError:
+            pass
+
         self.tasks = {}
         self.module = imp.load_source('_omnypytent_tasksfile', self.filename)
         try:
