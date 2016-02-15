@@ -38,7 +38,14 @@ class TasksFile:
         last_line = len(vim.current.buffer) - 1
         while 0 < last_line and not vim.current.buffer[last_line].strip():
             last_line -= 1
-        vim.current.buffer[last_line + 1:] = ['', '', '@task', 'def %s(ctx):' % taskname, '    ', '']
+
+        lines_to_put_at_end_of_file = ['', '', '@task', 'def %s(ctx):' % taskname, '    ', '']
+
+        if last_line + 1 == len(vim.current.buffer):
+            vim.current.buffer.append(lines_to_put_at_end_of_file)
+        else:
+            vim.current.buffer[last_line + 1:] = lines_to_put_at_end_of_file
+
         vim.command(str(len(vim.current.buffer) - 1))
         vim.command('startinsert!')
 
