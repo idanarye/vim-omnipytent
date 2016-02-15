@@ -57,7 +57,12 @@ class TasksFile:
             pass
 
         self.tasks = {}
-        self.module = imp.load_source('_omnypytent_tasksfile', self.filename)
+        old_dont_write_bytecode = sys.dont_write_bytecode
+        sys.dont_write_bytecode = True
+        try:
+            self.module = imp.load_source('_omnypytent_tasksfile', self.filename)
+        finally:
+            sys.dont_write_bytecode = old_dont_write_bytecode
         try:
             module_iteritems = self.module.__dict__.iteritems()
         except AttributeError:
