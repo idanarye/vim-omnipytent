@@ -61,7 +61,7 @@ class OptionsTask(Task):
 
         # options = {k: v for k, v in options.items() if self.__varname_filter(k)}
 
-        if 0 == len(args):
+        if 0 == len(args) or not ctx.is_main:
             if ctx.is_main:
                 chosen_item = None
             else:
