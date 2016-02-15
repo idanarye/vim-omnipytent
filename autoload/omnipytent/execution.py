@@ -65,10 +65,10 @@ FN = FN()
 
 class ShellCommandExecuter:
     def __init__(self, func):
-        self.execute_string = func
+        self.send_raw = func
 
     def __call__(self, *args):
-        return self.execute_string(' '.join(quote(str(arg)) for arg in args))
+        return self.send_raw(' '.join(quote(str(arg)) for arg in args))
 
 
 @ShellCommandExecuter
