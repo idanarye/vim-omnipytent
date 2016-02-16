@@ -43,8 +43,6 @@ class VimFunction:
 
     def __call__(self, *args):
         func_expr = '%s(%s)' % (self._function, ', '.join(map(vim_repr, args)))
-        # print(func_expr)
-        # print('map(%s, "v:val, v:val"' % func_expr)
         result_type, result_value = vim.eval('map([%s], "[type(v:val), v:val]")[0]' % func_expr)
         if result_type == self.__number_type:
             result_value = int(result_value)
@@ -91,6 +89,7 @@ if bool(int(vim.eval('exists(":terminal")'))):
         vim.command('tabnew')
         vim.command('terminal %s' % command)
 
+    @ShellCommandExecuter
     def TERMINAL_PANEL(command):
         vim.command('redraw')  # Release 'Press ENTER or type command to continue'
         old_win_view = vim.eval('winsaveview()')
