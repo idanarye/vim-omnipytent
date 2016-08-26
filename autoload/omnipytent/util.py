@@ -3,6 +3,7 @@ import vim
 from contextlib import contextmanager
 import json
 
+
 def vim_repr(value):
     if isinstance(value, bool):
         return str(int(value))  # 0 or 1
@@ -38,6 +39,20 @@ def vim_repr(value):
         except AttributeError:
             value_iteritems = value.items()
         return '{%s}' % ', '.join('%s: %s' % (vim_repr(k), vim_repr(v)) for k, v in value_iteritems)
+
+
+__number_type = vim.eval('type(0)')
+__float_type = vim.eval('type(0.0)')
+
+
+def vim_eval(expr):
+    """Like vim.eval, but deals with numbers correctly"""
+    expr_type, expr_value = vim.eval('map([%s], "[type(v:val), v:val]")[0]' % expr)
+    if expr_type == __number_type:
+        expr_value = int(expr_value)
+    elif expr_type == __float_type:
+        expr_value = float(expr_value)
+    return expr_value
 
 
 def input_list(prompt, options):

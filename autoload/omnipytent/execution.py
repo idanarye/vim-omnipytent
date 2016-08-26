@@ -7,7 +7,7 @@ try:
 except ImportError:
     from pipes import quote
 
-from .util import vim_repr
+from .util import vim_repr, vim_eval
 
 
 class VimCommand:
@@ -30,7 +30,6 @@ class CMD:
 
     def __getitem__(self, command):
         return VimCommand(command)
-
 CMD = CMD()
 
 
@@ -38,17 +37,9 @@ class VimFunction:
     def __init__(self, function):
         self._function = function
 
-    __number_type = vim.eval('type(0)')
-    __float_type = vim.eval('type(0.0)')
-
     def __call__(self, *args):
         func_expr = '%s(%s)' % (self._function, ', '.join(map(vim_repr, args)))
-        result_type, result_value = vim.eval('map([%s], "[type(v:val), v:val]")[0]' % func_expr)
-        if result_type == self.__number_type:
-            result_value = int(result_value)
-        elif result_type == self.__float_type:
-            result_value = float(result_value)
-        return result_value
+        return vim_eval(func_expr)
 
 
 class FN:
@@ -57,8 +48,19 @@ class FN:
 
     def __getitem__(self, function):
         return VimFunction(function)
-
 FN = FN()
+
+
+class VAR:
+    def __getitem__(self, varname):
+        return vim_eval(varname)
+
+    def __setitem__(self, varname, value):
+        let_expr = 'let %s = %s' % (varname, vim_repr(value))
+        vim.command(let_expr)
+        return value
+
+VAR = VAR()
 
 
 class ShellCommandExecuter:
