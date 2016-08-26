@@ -64,11 +64,20 @@ VAR = VAR()
 
 
 class ShellCommandExecuter:
+    class Raw(str):
+        pass
+
     def __init__(self, func):
         self.send_raw = func
 
+    def _quote(self, arg):
+        if isinstance(arg, self.Raw):
+            return str(arg)
+        else:
+            return quote(str(arg))
+
     def __call__(self, *args):
-        return self.send_raw(' '.join(quote(str(arg)) for arg in args))
+        return self.send_raw(' '.join(self._quote(arg) for arg in args))
 
 
 @ShellCommandExecuter
