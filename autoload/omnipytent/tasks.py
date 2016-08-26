@@ -8,7 +8,12 @@ from .util import input_list
 class Task(object):
     def __init__(self, func):
         self.func = func
+
         self.name = func.__name__
+        argspec = inspect.getargspec(func)
+        self._task_args = argspec.args[1:]  # remove `ctx` from the list
+        self._task_varargs = argspec.varargs
+
         self.dependencies = []
         self.completers = []
 
@@ -22,16 +27,16 @@ class Task(object):
     def __repr__(self):
         return '<Task: %s>' % self.name
 
-    def completions(self, parts):
+    def completions(self, ctx):
         result = set()
         for completer in self.completers:
-            result.update(completer(parts))
+            result.update(completer(ctx))
         return sorted(result)
 
     def complete(self, func):
-        def completer(parts):
-            result = func(parts)
-            result = (item for item in result if item.startswith(parts[-1]))
+        def completer(ctx):
+            result = func(ctx)
+            result = (item for item in result if item.startswith(ctx.arg_prefix))
             return result
         self.completers.append(completer)
 
@@ -49,8 +54,11 @@ class OptionsTask(Task):
     def __varname_filter(self, target):
         return not target.startswith('_') and target not in self.__func_args_set
 
-    def complete_options(self, parts):
-        return filter(self.__varname_filter, self.func.__code__.co_varnames)
+    def complete_options(self, ctx):
+        if 0 == ctx.arg_index:
+            return filter(self.__varname_filter, self.func.__code__.co_varnames)
+        else:
+            return []
 
     def invoke(self, ctx, *args):
         ctx = ctx.for_task(self)

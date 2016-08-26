@@ -4,6 +4,7 @@ import os.path
 import imp
 
 from .tasks import Task
+from .context import CompletionContext
 
 
 class TasksFile:
@@ -96,6 +97,12 @@ class TasksFile:
     def load_if_stale(self):
         if self.is_stale:
             self.load()
+
+    def completion_context(self, arg_lead, cmd_line, cursor_pos):
+        return CompletionContext.from_vim_completion_args(tasks_file=self,
+                                                          arg_lead=arg_lead,
+                                                          cmd_line=cmd_line,
+                                                          cursor_pos=cursor_pos)
 
 
 __last_tasks_file = [None]

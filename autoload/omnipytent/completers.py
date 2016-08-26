@@ -3,8 +3,8 @@ import glob
 
 
 def __generate_path_completer(root, dirs_only):
-    def completer(parts):
-        dirpath, filename = os.path.split(parts[-1])
+    def completer(ctx):
+        dirpath, filename = os.path.split(ctx.arg_prefix)
         basedir = os.path.join(root, dirpath)
         filename = filename.replace('[', '[[]')
         filename = filename.replace('*', '[*]')
