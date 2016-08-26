@@ -1,6 +1,6 @@
-command! -range -complete=customlist,omnipytent#completeIncludeTaskArgs -nargs=* OP call omnipytent#invoke(0, <line1>, <line2>, <count>, <f-args>)
-command! -range -complete=customlist,omnipytent#complete2IncludeTaskArgs -nargs=* OP2 call omnipytent#invoke(2, <line1>, <line2>, <count>, <f-args>)
-command! -range -complete=customlist,omnipytent#complete3IncludeTaskArgs -nargs=* OP3 call omnipytent#invoke(3, <line1>, <line2>, <count>, <f-args>)
+command! -range -complete=customlist,omnipytent#completeIncludeTaskArgs -nargs=+ OP call omnipytent#invoke(0, <line1>, <line2>, <count>, <f-args>)
+command! -range -complete=customlist,omnipytent#complete2IncludeTaskArgs -nargs=+ OP2 call omnipytent#invoke(2, <line1>, <line2>, <count>, <f-args>)
+command! -range -complete=customlist,omnipytent#complete3IncludeTaskArgs -nargs=+ OP3 call omnipytent#invoke(3, <line1>, <line2>, <count>, <f-args>)
 
 command! -complete=customlist,omnipytent#complete -nargs=? OPedit call omnipytent#editTask(0, '', <q-args>)
 command! -complete=customlist,omnipytent#complete2 -nargs=? OP2edit call omnipytent#editTask(2, '', <q-args>)

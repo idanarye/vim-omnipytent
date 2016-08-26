@@ -27,6 +27,11 @@ def _api_entry_point(command):
 
 
 def prompt_and_invoke():
+    # Not sure if this will ever get implemented. In Integrake invoking without
+    # command would have popped up the list of tasks and prompted the user to
+    # pick one. Since I implemented Vim command line completion for tasks I
+    # ended up never using it(it turned out to be quite a nuisance, in fact),
+    # so I see no reason to implement in in Omnipytent.
     raise NotImplementedError()
 
 
