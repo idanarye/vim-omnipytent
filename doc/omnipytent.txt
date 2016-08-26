@@ -1,0 +1,429 @@
+*omnipytent.txt* The all powerful Pythonic task runner
+
+
+Author:  Idan Arye <https://github.com/idanarye/>
+License: Same terms as Vim itself (see |license|)
+
+Version: 1.0.0
+
+INTRODUCTION                                                       *omnipytent*
+
+Omnipytent is a plugin for creating and running project-specific, user-specific
+tasks. Programmers should know enough about to programming to be able to script
+their own workflow - and Omnipytent aims to make this as simple, as accessible
+and as out-of-your-way as possible. Omnipytent is the successor to
+Integrake(see https://github.com/idanarye/vim-integrake), and follows a similar
+design - but in Python, so it could be used in neovim(which did not have Ruby
+support at the time)
+
+
+KEY FEATURES                                          *omnipytent-key-features*
+
+* Tasks run inside the Vim session environment and can interact with it - read
+  the line under your cursor, activate commands from other plugins etc.
+* Simple scaffolding for quickly adding new tasks.
+* Helpers for running Vim functions and commands from the Python environment.
+* Tasks file reloaded on demand.
+* Tasks can depend on each other, and pass data up the dependency tree.
+* Autocompletion for tasks and task arguments.
+* Tasks are project-specific. Map your favorite key to run the "build" task,
+  and use the it for every project you want to build, regardless of language
+  and/or build-system(you'll still need to write individual "build" tasks)
+* Tasks are user-specific. There are many things you need to be considerate
+  toward your teammates with - Omnipytent tasks are not one of them!
+* Integration with Plumbum(https://plumbum.readthedocs.io)
+
+
+OMNIPYTENT IS NOT A BUILD SYSTEM!            *omnipytent-is-not-a-build-system*
+
+Omnipytent may be designed like a build system, but it isn't one. If your read
+Jeff Atwood's excellent article "The F5 Key Is Not a Build Process" (if you
+haven't - you should. Right now. Stop reading this docfile and go to
+http://blog.codinghorror.com/the-f5-key-is-not-a-build-process/) - don't
+consider your project as "having a build process" just because you created an
+Omnipytent tasks file for it. In this regard, Omnipytent is no better than the
+F5 key!
+
+OK, yea, it is better. The mere fact that you are using Vim makes you a better
+human being than all these IDE guys. But if you want to follow Jeff Atwood's
+advice - Omnipytent is not enough.
+
+
+CONFIGURATION                                       *omnipytent-configuration*
+
+Omnipytent tasks files are personal, so if two developers work on the same
+project, they need two different tasks files. To easily differentiate between
+the tasks files of different developers, each developer should set a prefix
+using the *g:omnipytent_filePrefix* global variable. It's a good idea to use
+your name the prefix - so other developers will know that file belongs to you
+- and to start it with ".", so it will be hidden by the operation system(unless
+  you use Windows) and by plugins like NERDTree.
+
+Example: >
+    let g:omnipytent_filePrefix = '.idanarye'
+<
+
+PYTHON VERSIONS                                   *omnipytent-python-versions*
+
+Omnipytent supports both Python2 and Python3 - but your Vim needs to support
+it. You can check which python versions your Vim supports with: >
+    echo has('python')
+    echo has('python3')
+<
+The Python version used by Omnipytent determines the syntax and available
+libraries you can use in the tasks file. Therefore, if your Vim supports both
+Python2 and Python3 Omnipytent will not automatically choose between them.  If
+you already have an tasks file Omnipytent will determine the Python version
+based on it's name. If you don't - you'll have to use a versioned command to
+create it - e.g. *:OP2edit* or *:OP3edit* instead of |:OPedit|.
+
+You can convert your tasks file between Python versions using
+*:OPconvertTasksFilePythonVersion*. This will not change the contents of the
+tasks file itself, so it may not work with the other version's syntax - you
+need to take care of that compatibility yourself(or use an automated tool like
+2to3 or 3to2)
+
+
+CREATING TASKS                                     *omnipytent-creating-tasks*
+
+Omnipytent tasks are written in the Omnipytent tasks file. The tasks file must
+be at the current directory(=the root of the project) and it's name is the
+value of |g:omnipytent_filePrefix| plus the ".omnipytent.2.py" or
+".omnipytent.3.py" suffix(depending on the Python version used)
+
+Instead of opening it with |:edit| and it's name, you'll usually want to open
+it with the edit commands - *:OPedit*, *:OPsedit*, *:OPvedit* and *:OPtedit*,
+which will open the tasks file - creating it if it does not yet exist - in the
+current window, in an horizontally split window, in a vertically split window
+or in a new tab, respectively. For each of these commands you can add 2 or 3
+after the OP to force a Python version - but this is usually only required when
+you use them first to create the tasks file(see |omnipytent-python-versions|)
+
+You can add the name of a task as an argument to these commands - for example: >
+    OPedit run
+<
+This will open the tasks file and place the cursor on the "run" task. If the
+"run" task does not exist, it will create a basic skeleton for it.
+
+
+RUNNING TASKS                                       *omnipytent-running-tasks*
+
+Use the *:OP* command to run tasks. *:OP2* and *:OP3* can run tasks from a
+specific Python version's Omnipytent tasks file, but since you can not only run
+tasks if you already have a tasks file, you can usually just use |:OP|.
+
+|:OP| expects the task's name as the first argument. If the task has arguments,
+they should be added as additional arguments to *:OP*.
+
+
+TASKS SYNTAX                                         *omnipytent-tasks-syntax*
+
+Omnipytent tasks are written in Python and reside in the tasks file. They look
+like this: >
+    @task(dep1, dep2)
+    def my_task(ctx, arg1, arg2, *args):
+        print('arg1 is %s' % arg1)
+        print('arg2 is %s' % arg2)
+        print('args is %s' % (args,))
+<
+
+Where:
+* "task" is a decorator for defining tasks. Imported from the "omnipytent"
+  module(the import line will be added automatically if you use |:OPedit| and
+  friends to create the tasks file)
+* "dep1" and "dep2" are dependencies - other tasks that will be invoked before
+  this task. Refer to |omnipytent-task-dependencies| for more details.
+* "def my_task" is the function that will be called when the task is invoked.
+  The task is named after it's function - "my_task".
+* "ctx" - the context object. A task function must accept a context object as
+  it's first argument.
+* "arg1" and "arg2" are arguments, passed as strings.  "*args" is a vararg - a
+* tuple of all the remaining arguments passed to
+  |:OP| after the task name and the regular arguments. It's members are all
+  strings.
+
+We can run this task with: >
+    OP my_task a b c d
+<
+
+And it will print: >
+    arg1 is a
+    arg2 is b
+    args is ('c', 'd')
+<
+If there are no dependencies, the parenthesis can be omitted from the "task"
+decorator: >
+    @task
+    def my_task(ctx):
+        print('hello world')
+<
+
+THE CMD HELPER                                                *omnipytent-CMD*
+
+The "CMD" helper(imported from the "omnipytent" module) can be used to run Vim
+commands. Taking a attribute of "CMD" or using the index operator on it will
+create a command object that can be used like a function: >
+
+    @task
+    def edit_foo(ctx):
+        CMD.edit('foo.txt')
+        # or
+        CMD['edit']('foo.txt')
+<
+If you want to add the bang modifier(|:_!|) use the "bang" attribute of the
+command: >
+    @task
+    def edit_foo(ctx):
+        CMD.edit.bang('foo.txt')
+        # or
+        CMD['edit'].bang('foo.txt')
+<
+
+THE FN HELPER                                                  *omnipytent-FN*
+
+The "FN" helper(imported from the "omnipytent" module) can be used to run Vim
+functions. Taking a attribute of "FN" or using the index operator on it will
+create a function object that can be used like a Python function: >
+    @task
+    def print_buffer_name(ctx):
+        print(FN.bufname('.'))
+        # or
+        print(FN['bufname']('.'))
+<
+
+THE VAR HELPER                                                *omnipytent-VAR*
+
+The "VAR" helper(imported from the "omnipytent" module) can be used to get or
+set Vim variables. Use the index operator on it to get or set variables. It
+can also get and set registers and settings: >
+    @task()
+    def toggle_spell(ctx):
+        VAR['&spell'] = not VAR['&spell']
+<
+
+SHELL COMMAND EXECUTERS                      *omnipytent-ShellCommandExecuter*
+
+
+Executing shell commands is a very common task, and the "omnipytent" module
+exposes some helpers to make it easier:
+                                                             *omnipytent-BANG*
+* "BANG" simply runs the command with Vim's *:!*
+                                                               *omnipytent-SH*
+* "SH" runs the command, raising exception if it fails.
+                           *omnipytent-TERMINAL_TAB* *omnipytent-TERMINAL_PANEL*
+* "TERMINAL_TAB" and "TERMINAL_PANEL" open a Newvim terminal in a new tab or
+  panel respectively and run the command them. They only work in Neovim.
+
+All these act as functions that receive the shell command and it's arguments
+ad Python function parameters: >
+    @task
+    def compile(ctx):
+        # If your build process is even a bit more trivial than
+        # this - use a proper build system!
+        SH('gcc', 'main.c', '-o', 'a.out')
+<
+The arguments are shell-escaped automatically - unless they are wrapped with
+"ShellCommandExecuter.Raw".
+
+These executers are actually defined in the "omnipytent.execution" module,
+which also defines their class - "ShellCommandExecuter". You can use it as a
+decorator to create your own shell command executers using functions that
+accept a single string argument - the formatted shell command. For example, if
+you use my other plugin Erroneous(https://github.com/idanarye/vim-erroneous)
+for setting the command's proper 'errorformat' you can define a shell executor
+for it: >
+    from omnipytent.execution import ShellCommandExecuter
+
+
+    @ShellCommandExecuter
+    def ERUN(cmd):
+        CMD.Erun(cmd)
+
+
+    @task
+    def compile(ctx):
+        # If your build process is even a bit more trivial than
+        # this - use a proper build system!
+        ERUN('gcc', 'main.c', '-o', 'a.out')
+<
+While you can simply use the command directly with |omnipytent-CMD|, wrapping
+it with a "ShellCommandExecuter" will make it work with
+|omnipytent-plumbum-integration|.
+
+TASK DEPENDENCIES                               *omnipytent-task-dependencies*
+
+A task can depend on another task by passing it as argument to the "task"
+decorator. Before a dependant task runs all the tasks it depends on need to
+run first, and the tasks they depend on and so on - though no single task will
+run twice in the same invocation.
+                                         *omnipytent-pass_data* *omnipytent-dep*
+A task can call the "pass_data" method of it's context object to pass data to
+the tasks that depend on it. The dependant tasks can access that data using
+the "dep" attribute of their context object - it will have an attribute with
+the name of the task that passed the data. A task can only access data passed
+from a task it depends on directly.
+
+Example: >
+    @task
+    def foo(ctx):
+        from random import randint
+        ctx.pass_data(randint(0, 100))
+
+
+    @task(foo)
+    def twice_foo(ctx):
+        ctx.pass_data(2 * ctx.dep.foo)
+
+    @task(foo)
+    def trice_foo(ctx):
+        ctx.pass_data(3 * ctx.dep.foo)
+
+
+    @task(twice_foo, trice_foo)
+    def bar(ctx):
+        assert 3 * ctx.dep.twice_foo == 2 * ctx.dep.trice_foo
+<
+
+OPTIONS TASK                                         *omnipytent-options-task*
+
+The most common usage for |omnipytent-task-dependencies| is the options task.
+The options task is a task wrapper for creating a task that displays multiple
+options to the user(=you) and prompts them to pick one. The picked option will
+be passed to dependant tasks.
+
+An options task will remember the user's choice and stores it in memory. If an
+options task runs as a dependency and a previous choice exists in memory, the
+options task will use the remembered choice instead of promoting the user
+again. The remembered choice will be erased if you exit Vim, remove&restore
+the options task, remove the remembered option and invoke the options tasks
+again or invoke the options task directly.
+
+To define an options task, use the "task.options" decorator(imported from the
+"omnipytent" module). It can accept other tasks as dependencies. To define
+options, assign local variables inside the task function. The option's caption
+will be the variable's name and it's value will be the assigned value.
+Variables starting with underscore("_") will not become options.
+
+Example: >
+    @task.options
+    def compiler(ctx):
+        gcc = 'g++'
+        llvm = 'clang++'
+
+
+    @task(compiler)
+    def build(ctx):
+        SH('make', 'CC=%s' % ctx.dep.compiler)
+<
+You can invoke the options task directly to force a re-prompt, or you can
+invoke it with the desired option's caption as argument to set it(there is
+autocompletion for the option argument)
+
+
+TASK ARGUMENT COMPLETION                 *omnipytent-task-argument-completion*
+
+You can define autocompletion for your task arguments. Use the task's
+".complete" method as decorator for a completion function. The completion
+function accepts a single argument - the completion context object - and needs
+to return a list of possible values. The completion function does not need to
+filter it's result based on the last argument as prefix - Omnipytent already
+does it - the list of arguments is only there for cases where you need
+different completion based on the argument index or the previous arguments.
+
+Example: >
+    @task
+    def foo(ctx, arg):
+        print(arg)
+
+
+    @foo.complete
+    def foo_arg_complete(ctx):
+        return ['hello', 'world']
+<
+                          *omnipytent-dir_completer* *omnipytent-file_completer*
+The "omnipytent.completers" module defines "dir_completer" and
+"file_completer", which accept a root path and return completion functions for
+directories or files respectively: >
+    from omnipytent.completers import dir_completer
+
+
+    @task
+    def print_dir_size(ctx, dirname):
+        BANG('du', '-hd0', dirname)
+
+    print_dir_size.complete(dir_completer('.'))
+<
+
+CONTEXT OBJECTS                                   *omnipytent-context-objects*
+
+Task functions and completion functions receive a context object as an
+argument. The context object contains data and methods for interaction with
+task invocation mechanism.
+
+An *omnipytent-task-context-object* "ctx" contains:
+
+* "ctx.cache"       a private cache for the task, consistent among
+                    invocations.  The cache is stored in memory - it will not
+                    survice closing Vim.
+* "ctx.dep"         See *omnipytent-dep*
+* "ctx.is_main"     True if this task is the one invoked by the user, False if
+                    it was invoked as dependency of another task.
+* "ctx.pass_data"   See *omnipytent-pass_data*
+* "ctx.task"        The task object.
+
+An *omnipytent-completion-context-object* "ctx" contains:
+
+* "ctx.arg_index"   The index of the completed task argument.
+* "ctx.arg_name"    The name of the completed task argument.
+* "ctx.arg_prefix"  The part of the completed task argument that the user
+                    already typed.
+* "ctx.cmd_line"    The entire command line.
+* "ctx.cursor_pos"  The cursor position in the command line.
+* "ctx.task"        The task object.
+
+
+OTHER HELPERS              *omnipytent-other-helpers* *omnipytent-utils-module*
+
+The "omnipytent.utils" module defines several helpers for easing the creation
+of useful tasks:
+                                                         *omnipytent-vim_repr*
+"vim_repr" takes a Python object and return a string for re-creating that
+opbject in Vim.
+                                                         *omnipytent-vim_eval*
+"vim_eval" takes a Vim expression, evaluates, and converts it to Python
+object. It is required because |python-eval| returns numbers as if they were
+strings.
+                                                        *omnipytent-inputlist*
+"input_list" wraps and improves Vim's |inputlist()|. It accepts two arguments
+- a prompt and a list. It displays the objects in the list, numbered, with the
+prompt as a title, and when the user picks one of the options it's value to
+the user(instead of the index like |inputlist()|).
+                    *omnipytent-populate_quickfix* *omnipytent-populate_loclist*
+"populate_quickfix" and "populate_loclist" are context managers for populating
+the quickfix list and the locations list respectively. "populate_loclist"
+receives an optional parameters that indicate the target window's ID. Both
+context managers yield a function that accept, as keyword arguments, the same
+arguments as the list-of-dicts option of |setqflist()|. Each call to that
+function will register a quickfix item once the context manager exists: >
+    @task
+    def populate_errors(ctx):
+        with populate_quickfix() as qf:
+            qf(filename='main.c', lnum=3, text='error here')
+            qf(filename='main.c', lnum=4, text='error there')
+<
+
+PLUMBUM INTEGRATION                           *omnipytent-plumbum-integration*
+
+Omnipytent integrates with Plumbum(https://plumbum.readthedocs.io) by allowing
+|omnipytent-ShellCommandExecuter| to act as a Plumbum execution modifiers. To
+activate this functionality you must import "omnipytent.integration.plumbum".
+This module will monkey-patch ShellCommandExecuter to make them act like a
+Plumbum execution modifiers. You only need to import the module for the magic
+to work, but for your convinience you can import Plumbum's "local" from it: >
+    from omnipytent.integration.plumbum import local
+
+
+    @task
+    def find_bar_in_foo(ctx):
+        (local['ls']['foo'] | local['grep']['-e', 'bar']) & BANG
+<
