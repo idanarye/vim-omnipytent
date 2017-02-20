@@ -2,10 +2,15 @@ import vim
 
 from itertools import chain
 
-try:
-    from shlex import quote
-except ImportError:
-    from pipes import quote
+if vim.eval('has("win32")'):
+    from subprocess import list2cmdline
+    def quote(s):
+        return list2cmdline([s])
+else:
+    try:
+        from shlex import quote
+    except ImportError:
+        from pipes import quote
 
 from .util import vim_repr, vim_eval
 

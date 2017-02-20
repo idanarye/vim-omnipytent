@@ -11,6 +11,9 @@ function! s:runPythonCommands(pythonVersion, ...)
 endfunction
 
 let s:modulePath = fnameescape(expand('<sfile>:p:h'))
+if has('win32')
+    let s:modulePath = escape(s:modulePath, '\')
+endif
 function! s:updatePythonSysPath(pythonVersion)
     call s:runPythonCommands(a:pythonVersion,
                 \ 'if "'.s:modulePath.'" not in sys.path: sys.path.append("'.s:modulePath.'")',
