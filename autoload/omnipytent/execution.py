@@ -99,11 +99,21 @@ def SH(command):
         raise Exception('Shell error %s while executing `%s`' % (shell_error, command))
 
 
-if bool(int(vim.eval('exists(":terminal")'))):
+if bool(int(vim.eval('exists("*term_start")'))):  # Vim 8
+    def __terminal(command):
+        FN.term_start(command, dict(curwin=1))
+elif bool(int(vim.eval('exists("*termopen")'))):  # Neovim
+    def __terminal(command):
+        FN.termopen(command)
+        FN.feedkeys('A', 'n')
+else:
+    __terminal = None
+
+if __terminal:
     @ShellCommandExecuter
     def TERMINAL_TAB(command):
         vim.command('tabnew')
-        vim.command('terminal %s' % command)
+        __terminal(command)
 
     @ShellCommandExecuter
     def TERMINAL_PANEL(command):
@@ -112,6 +122,4 @@ if bool(int(vim.eval('exists(":terminal")'))):
         vim.command('botright new')
         vim.command('call winrestview(%s)' % old_win_view)
         vim.command('resize 5')
-        vim.command('terminal %s' % command)
-        vim.command('autocmd BufWinLeave <buffer> execute winnr("#")."wincmd w"')
-
+        __terminal(command)

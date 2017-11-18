@@ -211,8 +211,9 @@ exposes some helpers to make it easier:
                                                                *omnipytent-SH*
 * "SH" runs the command, raising exception if it fails.
                            *omnipytent-TERMINAL_TAB* *omnipytent-TERMINAL_PANEL*
-* "TERMINAL_TAB" and "TERMINAL_PANEL" open a Newvim terminal in a new tab or
-  panel respectively and run the command them. They only work in Neovim.
+* "TERMINAL_TAB" and "TERMINAL_PANEL" open a terminal in a new tab or panel
+  respectively and run the command there. They only work in Neovim and Vim8
+  with |terminal| support.
 
 All these act as functions that receive the shell command and it's arguments
 ad Python function parameters: >
