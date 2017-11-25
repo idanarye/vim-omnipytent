@@ -8,4 +8,3 @@ try:
     __all__.extend(['TERMINAL_TAB', 'TERMINAL_PANEL'])
 except ImportError:
     pass
-
