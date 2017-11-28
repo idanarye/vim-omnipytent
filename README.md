@@ -31,4 +31,6 @@ KEY FEATURES
  * Tasks are user-specific. There are many things you need to be considerate
    toward your teammates with - Omnipytent tasks are not one of them!
  * Integration with [Plumbum](https://plumbum.readthedocs.io)
+ * Define helpers in other plugins and load them from a special
+   `omnipytent.ext` module.
 

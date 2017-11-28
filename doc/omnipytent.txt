@@ -32,6 +32,8 @@ KEY FEATURES                                          *omnipytent-key-features*
 * Tasks are user-specific. There are many things you need to be considerate
   toward your teammates with - Omnipytent tasks are not one of them!
 * Integration with Plumbum(https://plumbum.readthedocs.io)
+* Define helpers in other plugins and load them from a special |omnipytent.ext|
+  module.
 
 
 OMNIPYTENT IS NOT A BUILD SYSTEM!            *omnipytent-is-not-a-build-system*
@@ -427,4 +429,36 @@ to work, but for your convinience you can import Plumbum's "local" from it: >
     @task
     def find_bar_in_foo(ctx):
         (local['ls']['foo'] | local['grep']['-e', 'bar']) & BANG
+<
+
+THE EXTENSIONS PACKAGE                                        *omnipytent.ext*
+
+Omnipytent makes it easy to invoke Vim functions and commands from Python, but
+interface made specifically for Python is still more elegant. The
+"omnipytent.ext" package allows other plugins to provide such interface for the
+functionality they provide.
+
+To create such interface for your plugin, add a Python file to an "omnipytent"
+directory in the path - e.g. "omnipytent/foo.py". To use it, simple import it
+as a submodule of the `omnipytent.ext` package - "import omnipytent.ext.foo".
+
+Erroneous(https://github.com/idanarye/vim-erroneous), for example, provides the
+"ERUN" |omnipytent-ShellCommandExecuter| for running it's |erroneous-Erun|
+command: In "omnipytent/erroneous.py": >
+    from omnipytent import CMD
+    from omnipytent.execution import ShellCommandExecuter
+
+
+    @ShellCommandExecuter
+    def ERUN(command):
+        CMD.Erun.bang(command)
+<
+
+This allows you, in your omnipytent file, to write: >
+    from omnipytent.integration.plumbum import local
+    from omnipytent.ext.erroneous import ERUN
+
+    @task
+    def compile(ctx):
+        local['gcc']['main.c'] & ERUN
 <
