@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Windows support.
 - `TERMINAL_PANEL` and `TERMINAL_TAB` support for Vim 8.
 - `omnipytent.ext` for loading module from `omnipytent` directories in Vim plugins.
+- Support Plumbum's `with_env()`(Linux+Windows)
 
 ## 0.1.0 - 2016-08-26
 ### Added
