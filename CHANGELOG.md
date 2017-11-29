@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `omnipytent.ext` for loading module from `omnipytent` directories in Vim plugins.
 - Support Plumbum's `with_env()`(Linux+Windows)
 
+### Changed
+- Don't put blank line at the end of the file - Vim already adds a linefeed...
+
 ## 0.1.0 - 2016-08-26
 ### Added
 - Syntax for defining tasks and dependencies.
