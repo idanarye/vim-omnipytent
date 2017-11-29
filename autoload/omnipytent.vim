@@ -43,7 +43,12 @@ function! s:guessPythonVersion()
                 if l:has3
                     return 3
                 else
-                    throw "No task file exist - use :OP2edit or :OP3edit to create them"
+                    let l:defaultPythonVersion = get(g:, 'omnipytent_defaultPythonVersion', 0)
+                    if 0 <= index([2, 3], l:defaultPythonVersion)
+                        return l:defaultPythonVersion
+                    else
+                        throw "No task file exist - use :OP2edit or :OP3edit to create them, or see ':help g:omnipytent_defaultPythonVersion'"
+                    endif
                 endif
             endif
             throw 'bad'

@@ -62,8 +62,13 @@ your name the prefix - so other developers will know that file belongs to you
   you use Windows) and by plugins like NERDTree.
 
 Example: >
-    let g:omnipytent_filePrefix = '.idanarye'
+    let g:omnipytent_filePrefix = '.moshecohen'
 <
+
+Other configuration options:
+
+* |g:omnipytent_defaultPythonVersion|
+
 
 PYTHON VERSIONS                                   *omnipytent-python-versions*
 
@@ -78,6 +83,17 @@ Python2 and Python3 Omnipytent will not automatically choose between them.  If
 you already have an tasks file Omnipytent will determine the Python version
 based on it's name. If you don't - you'll have to use a versioned command to
 create it - e.g. *:OP2edit* or *:OP3edit* instead of |:OPedit|.
+
+Alternatively, *g:omnipytent_defaultPythonVersion* can be set to 2 or 3 to make
+|:OPedit| and friends pick a version even when there is no tasks file and your
+Vim supports both Python2 and Python3:
+
+Example: >
+    let g:omnipytent_defaultPythonVersion = 3
+<
+
+If you don't set it, or set it to anything other than 2 or 3, you'll get an
+error.
 
 You can convert your tasks file between Python versions using
 *:OPconvertTasksFilePythonVersion*. This will not change the contents of the
