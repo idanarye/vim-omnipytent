@@ -244,6 +244,14 @@ ad Python function parameters: >
 The arguments are shell-escaped automatically - unless they are wrapped with
 "ShellCommandExecuter.Raw".
 
+
+CREATING SHELL COMMAND EXECUTERS    *omnipytent-creating-ShellCommandExecuter*
+
+Creating new shell command executors is typically too much investment with not
+enough return when done in a tasks file. It can makes sense, though, to define
+them in extension modules(|omnipytent.ext|) - either as a Omnipytent extension
+plugin or as Omnipytent interface to regular Vim plugins.
+
 These executers are actually defined in the "omnipytent.execution" module,
 which also defines their class - "ShellCommandExecuter". You can use it as a
 decorator to create your own shell command executers using functions that
@@ -268,6 +276,52 @@ for it: >
 While you can simply use the command directly with |omnipytent-CMD|, wrapping
 it with a "ShellCommandExecuter" will make it work with
 |omnipytent-plumbum-integration|.
+
+You can pass parameters to shell executors by named arguments. Any argument to
+the execution function after the first is a paramter: >
+    @ShellCommandExecuter
+    def ERUN(cmd, use_location_list=False):
+        if use_location_list:
+            CMD.Elrun(cmd)
+        else:
+            CMD.Erun(cmd)
+
+
+    @task
+    def compile(ctx):
+        ERUN('gcc', 'main.c', '-o', 'a.out')
+
+
+    @task
+    def compile_loclist(ctx):
+        ERUN('gcc', 'main.c', '-o', 'a.out', use_location_list=True)
+<
+
+By sending named arguments without any positional arguments(the actualy
+command) you can get a new shell executor that uses these parameters: >
+        ERUN(use_location_list=True)('gcc', 'main.c', '-o', 'a.out')
+<
+
+Use this, and the fact that ShellCommandExecuter is a class, to create a more
+elegant fluent interface for these parameters: >
+    class ERUN(ShellCommandExecuter):
+        @property
+        def loc(self):
+            return self(use_location_list=True)
+
+
+    @ERUN
+    def ERUN(cmd, use_location_list=False):
+        if use_location_list:
+            CMD.Elrun(cmd)
+        else:
+            CMD.Erun(cmd)
+
+
+    @task
+    def compile_loclist(ctx):
+        ERUN.loc('gcc', 'main.c', '-o', 'a.out')
+<
 
 TASK DEPENDENCIES                               *omnipytent-task-dependencies*
 

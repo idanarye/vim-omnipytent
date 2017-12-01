@@ -74,6 +74,7 @@ class ShellCommandExecuter:
 
     def __init__(self, func):
         self.send_raw = func
+        self.parameters = {}
 
     def _quote(self, arg):
         if isinstance(arg, self.Raw):
@@ -81,8 +82,19 @@ class ShellCommandExecuter:
         else:
             return quote(str(arg))
 
-    def __call__(self, *args):
-        return self.send_raw(' '.join(self._quote(arg) for arg in args))
+    def _with_parameters(self, **parameters):
+        result = type(self)(self.send_raw)
+        result.parameters.update(self.parameters)
+        result.parameters.update(parameters)
+        return result
+
+    def __call__(self, *args, **parameters):
+        if parameters and not args:
+            return self._with_parameters(**parameters)
+        for k, v in self.parameters.items():
+            if k not in parameters:
+                parameters[k] = v
+        return self.send_raw(' '.join(self._quote(arg) for arg in args), **parameters)
 
 
 @ShellCommandExecuter

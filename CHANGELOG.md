@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support Plumbum's `with_env()`(Linux+Windows)
 - `g:omnipytent_defaultPythonVersion` for picking Python2 or Python3 as the
   default Python version for new tasks files.
+- Support (named) parameters in shell executors.
 
 ### Changed
 - Don't put blank line at the end of the file - Vim already adds a linefeed...
