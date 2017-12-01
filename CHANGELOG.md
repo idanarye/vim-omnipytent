@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## 1.1.0 - 2017-12-01
 ### Added
 - Windows support.
 - `TERMINAL_PANEL` and `TERMINAL_TAB` support for Vim 8.
@@ -18,7 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Don't put blank line at the end of the file - Vim already adds a linefeed...
 
-## 0.1.0 - 2016-08-26
+## 1.0.0 - 2016-08-26
 ### Added
 - Syntax for defining tasks and dependencies.
 - Task running commands with completion.
