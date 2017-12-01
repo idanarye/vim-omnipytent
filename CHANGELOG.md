@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `g:omnipytent_defaultPythonVersion` for picking Python2 or Python3 as the
   default Python version for new tasks files.
 - Support (named) parameters in shell executors.
+  - Add the `size` parameter to `TERMINAL_PANEL` for setting the number of lines.
 
 ### Changed
 - Don't put blank line at the end of the file - Vim already adds a linefeed...

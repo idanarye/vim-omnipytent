@@ -127,11 +127,15 @@ if __terminal:
         vim.command('tabnew')
         __terminal(command)
 
-    @ShellCommandExecuter
-    def TERMINAL_PANEL(command):
+    class TERMINAL_PANEL(ShellCommandExecuter):
+        def size(self, size):
+            return self(size=size)
+
+    @TERMINAL_PANEL
+    def TERMINAL_PANEL(command, size=5):
         vim.command('redraw')  # Release 'Press ENTER or type command to continue'
         old_win_view = vim.eval('winsaveview()')
         vim.command('botright new')
-        vim.command('call winrestview(%s)' % old_win_view)
-        vim.command('resize 5')
+        vim.command('call winrestview(%s)' % (old_win_view,))
+        vim.command('resize %s' % (size,))
         __terminal(command)

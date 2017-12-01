@@ -233,6 +233,8 @@ exposes some helpers to make it easier:
   respectively and run the command there. They only work in Neovim and Vim8
   with |terminal| support.
 
+  * Use "TERMINAL_PANEL.size(num_rows) to set the size of the terminal panel.
+
 All these act as functions that receive the shell command and it's arguments
 ad Python function parameters: >
     @task
