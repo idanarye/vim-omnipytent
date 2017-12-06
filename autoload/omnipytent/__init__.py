@@ -1,7 +1,7 @@
-__all__ = ['task', 'CMD', 'FN', 'VAR', 'BANG', 'SH']
+__all__ = ['task', 'CMD', 'FN', 'VAR', 'OPT', 'BANG', 'SH']
 
 from .dsl import task
-from .execution import CMD, FN, VAR, BANG, SH
+from .execution import CMD, FN, VAR, OPT, BANG, SH
 
 from . import _extending as __extending
 

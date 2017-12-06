@@ -1,9 +1,13 @@
 import vim
 
 from itertools import chain
+from contextlib import contextmanager
+
+from .util import vim_repr, vim_eval
 
 if vim.eval('has("win32")'):
     from subprocess import list2cmdline
+
     def quote(s):
         return list2cmdline([s])
 else:
@@ -12,7 +16,9 @@ else:
     except ImportError:
         from pipes import quote
 
-from .util import vim_repr, vim_eval
+
+def __singleton(cls):
+    return cls()
 
 
 class VimCommand:
@@ -29,13 +35,13 @@ class VimCommand:
         return self.__class__('%s!' % self._command)
 
 
+@__singleton
 class CMD:
     def __getattr__(self, command):
         return VimCommand(command)
 
     def __getitem__(self, command):
         return VimCommand(command)
-CMD = CMD()
 
 
 class VimFunction:
@@ -47,25 +53,89 @@ class VimFunction:
         return vim_eval(func_expr)
 
 
+@__singleton
 class FN:
     def __getattr__(self, function):
         return VimFunction(function)
 
     def __getitem__(self, function):
         return VimFunction(function)
-FN = FN()
 
 
+
+@__singleton
 class VAR:
+    def __contains__(self, varname):
+        return bool(int(vim.eval('exists(%s)' % vim_repr(varname))))
+
     def __getitem__(self, varname):
-        return vim_eval(varname)
+        try:
+            return vim_eval(varname)
+        except Exception as e:
+            if varname not in self:
+                raise KeyError('No Vim variable %r - %s' % (varname, e))
+            raise
 
     def __setitem__(self, varname, value):
         let_expr = 'let %s = %s' % (varname, vim_repr(value))
         vim.command(let_expr)
         return value
 
-VAR = VAR()
+    def __delitem__(self, varname):
+        del_expr = 'unlet %s' % (varname)
+        vim.command(del_expr)
+
+    @contextmanager
+    def changed(self, **kwargs):
+        old = {}
+        nonexistent = []
+
+        for k, v in kwargs.items():
+            try:
+                old[k] = self[k]
+            except KeyError:
+                nonexistent.append(k)
+
+        try:
+            for k, v in kwargs.items():
+                self[k] = v
+            yield
+        finally:
+            for k, v in old.items():
+                self[k] = v
+            for k in nonexistent:
+                del self[k]
+
+
+
+
+@__singleton
+class OPT:
+    def __getattr__(self, optname):
+        return vim_eval('&' + optname)
+
+    __getitem__ = __getattr__
+
+    def __setattr__(self, optname, value):
+        let_expr = 'let &%s = %s' % (optname, vim_repr(value))
+        vim.command(let_expr)
+        return value
+
+    __setitem__ = __setattr__
+
+    @contextmanager
+    def changed(self, **kwargs):
+        old = dict((k, self[k]) for k in kwargs.keys())
+
+        try:
+            for k, v in kwargs.items():
+                self[k] = v
+            yield
+        finally:
+            for k, v in old.items():
+                self[k] = v
+
+
 
 
 class ShellCommandExecuter:

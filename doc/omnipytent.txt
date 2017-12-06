@@ -212,11 +212,40 @@ create a function object that can be used like a Python function: >
 THE VAR HELPER                                                *omnipytent-VAR*
 
 The "VAR" helper(imported from the "omnipytent" module) can be used to get or
-set Vim variables. Use the index operator on it to get or set variables. It
-can also get and set registers and settings: >
+set Vim variables. Use the index operator on it to get or set variables,
+Python's "del" command to delete(|:unlet|) variables, and Python's "in"
+operator to check for variable's existance. It can also get and set registers
+and settings: >
     @task()
     def toggle_spell(ctx):
         VAR['&spell'] = not VAR['&spell']
+<
+
+You can use the "changed" context manager to set variables and restore them
+when exiting the context: >
+    @task()
+    def build():
+      with VAR.changed(**{'&makeprg': 'gradle'}):
+          CMD.make()
+<
+
+THE OPT HELPER                                                *omnipytent-OPT*
+
+Since setting options is so common, the "OPT" helper(imported from the
+"omnipytent" module) can be used to get or set Vim options. Get/set it's
+attributes or use the index operator on it to get or set options, and use
+Python's "in" operator to check for option's existence. >
+    @task()
+    def toggle_spell(ctx):
+        OPT['spell'] = not OPT['spell']
+<
+
+You can use the "changed" context manager to set options and restore them when
+exiting the context: >
+    @task()
+    def build():
+      with OPT.changed(makeprg='gradle'):
+          CMD.make()
 <
 
 SHELL COMMAND EXECUTERS                      *omnipytent-ShellCommandExecuter*
