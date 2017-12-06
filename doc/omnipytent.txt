@@ -4,7 +4,7 @@
 Author:  Idan Arye <https://github.com/idanarye/>
 License: Same terms as Vim itself (see |license|)
 
-Version: 1.1.0
+Version: 1.1.0+
 
 INTRODUCTION                                                       *omnipytent*
 
@@ -225,7 +225,7 @@ SHELL COMMAND EXECUTERS                      *omnipytent-ShellCommandExecuter*
 Executing shell commands is a very common task, and the "omnipytent" module
 exposes some helpers to make it easier:
                                                              *omnipytent-BANG*
-* "BANG" simply runs the command with Vim's *:!*
+* "BANG" simply runs the command with Vim's |:!|
                                                                *omnipytent-SH*
 * "SH" runs the command, raising exception if it fails.
                            *omnipytent-TERMINAL_TAB* *omnipytent-TERMINAL_PANEL*
