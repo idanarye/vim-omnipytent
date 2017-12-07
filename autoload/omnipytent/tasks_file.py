@@ -86,7 +86,7 @@ class TasksFile:
     @staticmethod
     def default_name():
         try:
-            return '%s.omnipytent.%s.py' % (vim.vars['omnipytent_filePrefix'], sys.version_info.major)
+            return '%s.omnipytent.%s.py' % (vim.eval('g:omnipytent_filePrefix'), sys.version_info.major)
         except KeyError:
             raise Exception('g:omnipytent_filePrefix not set')
 
