@@ -110,14 +110,22 @@ class VAR:
 
 
 @__singleton
-class OPT:
+class OPT(object):
+    def __init__(self, prefix=None):
+        if prefix:
+            self.__dict__['_prefix'] = prefix
+        else:
+            self.__dict__['_prefix'] = '&'
+            self.__dict__['l'] = type(self)(prefix='&l:')
+            self.__dict__['g'] = type(self)(prefix='&g:')
+
     def __getattr__(self, optname):
-        return vim_eval('&' + optname)
+        return vim_eval(self._prefix + optname)
 
     __getitem__ = __getattr__
 
     def __setattr__(self, optname, value):
-        let_expr = 'let &%s = %s' % (optname, vim_repr(value))
+        let_expr = 'let %s%s = %s' % (self._prefix, optname, vim_repr(value))
         vim.command(let_expr)
         return value
 
@@ -125,6 +133,10 @@ class OPT:
 
     @contextmanager
     def changed(self, **kwargs):
+        if self._prefix == '&':
+            with self.l.changed(**kwargs), self.g.changed(**kwargs):
+                yield
+            return
         old = dict((k, self[k]) for k in kwargs.keys())
 
         try:

@@ -248,6 +248,9 @@ exiting the context: >
           CMD.make()
 <
 
+You can use "OPT.l" and "OPT.g" to only modify local or global option values,
+respectively.
+
 SHELL COMMAND EXECUTERS                      *omnipytent-ShellCommandExecuter*
 
 
