@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Fix a doc problem where `:!` was defining a tag instead of refering to it
 - Fix binary-vs-string problem with Python3 and Vim
+- Fix Python type problems by making all `execution.py` classes subclass
+  `object`.
 
 ## 1.1.0 - 2017-12-01
 ### Added

@@ -21,7 +21,7 @@ def __singleton(cls):
     return cls()
 
 
-class VimCommand:
+class VimCommand(object):
     _quoter = str
 
     def __init__(self, command):
@@ -36,7 +36,7 @@ class VimCommand:
 
 
 @__singleton
-class CMD:
+class CMD(object):
     def __getattr__(self, command):
         return VimCommand(command)
 
@@ -44,7 +44,7 @@ class CMD:
         return VimCommand(command)
 
 
-class VimFunction:
+class VimFunction(object):
     def __init__(self, function):
         self._function = function
 
@@ -54,7 +54,7 @@ class VimFunction:
 
 
 @__singleton
-class FN:
+class FN(object):
     def __getattr__(self, function):
         return VimFunction(function)
 
@@ -64,7 +64,7 @@ class FN:
 
 
 @__singleton
-class VAR:
+class VAR(object):
     def __contains__(self, varname):
         return bool(int(vim.eval('exists(%s)' % vim_repr(varname))))
 
@@ -150,7 +150,7 @@ class OPT(object):
 
 
 
-class ShellCommandExecuter:
+class ShellCommandExecuter(object):
     class Raw(str):
         pass
 
@@ -199,7 +199,7 @@ if bool(int(vim.eval('exists("*term_start")'))):  # Vim 8
 elif bool(int(vim.eval('exists("*termopen")'))):  # Neovim
     def __terminal(command):
         FN.termopen(command)
-        FN.feedkeys('A', 'n')
+        FN.feedkeys('a', 'n')
 else:
     __terminal = None
 
