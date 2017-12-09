@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add the `del` operator for `VAR`.
 - Add the `in` operator for `VAR` and `OPT`.
 - Add the `changed` context manager for `VAR` and `OPT`.
+- Add utils for working with Vim windows - `grep_windows`, `grep_window` and
+  `other_windows`.
 
 ### Fixed
 - Fix a doc problem where `:!` was defining a tag instead of refering to it

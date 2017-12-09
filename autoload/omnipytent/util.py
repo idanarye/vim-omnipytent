@@ -2,6 +2,7 @@ import vim
 
 from contextlib import contextmanager
 import json
+import re
 
 
 def vim_repr(value):
@@ -129,3 +130,26 @@ def populate_quickfix():
 def populate_loclist(window=0):
     return __populate_vimlist('setloclist(%s, ' % window)
 
+
+def grep_windows(matcher):
+    matcher = re.compile(matcher)
+
+    for window in vim.windows:
+        if matcher.search(window.buffer.name):
+            yield window
+
+
+def grep_window(matcher):
+    window, = grep_windows(matcher)
+    return window
+
+
+@contextmanager
+def other_windows(window=None):
+    original_window = vim.current.window
+    if window:
+        vim.current.window = window
+    try:
+        yield
+    finally:
+        vim.current.window = original_window

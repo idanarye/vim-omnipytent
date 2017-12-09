@@ -497,7 +497,7 @@ opbject in Vim.
 "vim_eval" takes a Vim expression, evaluates, and converts it to Python
 object. It is required because |python-eval| returns numbers as if they were
 strings.
-                                                        *omnipytent-inputlist*
+                                                       *omnipytent-input_list*
 "input_list" wraps and improves Vim's |inputlist()|. It accepts two arguments
 - a prompt and a list. It displays the objects in the list, numbered, with the
 prompt as a title, and when the user picks one of the options it's value to
@@ -514,6 +514,24 @@ function will register a quickfix item once the context manager exists: >
         with populate_quickfix() as qf:
             qf(filename='main.c', lnum=3, text='error here')
             qf(filename='main.c', lnum=4, text='error there')
+<
+
+                                                     *omnipytent-grep_windows*
+"grep_windows" will accept a string, and iterate over all the window
+objects(|python-window|) that their buffer name match that string.
+                                                      *omnipytent-grep_window*
+"grep_window" is the same as "grep_windows" - except it'll return a single
+window, throwing if no window or multiple windows have matched the pattern.
+                                                    *omnipytent-other_windows*
+"other_windows" is a context manager that returns you to the window where you
+were when you exit it's context - allowing you to easily create tasks that do
+things in other windows. It can receive a single argument - a window
+object(|python-window|) - and it will move to that window when entering the
+context manager. >
+    @task
+    def write_note(ctx):
+        with other_windows(grep_window('NOTES')):
+            FN.append('$', 'Some note text')
 <
 
 PLUMBUM INTEGRATION                           *omnipytent-plumbum-integration*
