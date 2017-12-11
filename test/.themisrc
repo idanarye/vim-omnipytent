@@ -1,0 +1,32 @@
+call themis#helper('command').with(themis#helper('assert'))
+
+let g:omnipytent_filePrefix = 'tests'
+let g:omnipytent_defaultPythonVersion = str2nr($PYVER)
+
+function! CreateSandbox() abort
+    let g:testSandbox = tempname()
+    call mkdir(g:testSandbox, 'p')
+    call themis#log('Running test in' . g:testSandbox)
+    execute 'cd '.g:testSandbox
+endfunction
+
+function! s:CreateTasksfileAfter()
+    let l:startFrom = 3
+    let l:lastLine = line('$')
+    for l:i in range(l:startFrom, l:lastLine)
+        let l:line = getline(l:i)
+        if l:line =~ '\v^\s*$'
+            continue
+        endif
+        let l:indent = match(l:line, '\v\S')
+        break
+    endfor
+    if has_key(l:, 'indent')
+        for l:i in range(l:startFrom, l:lastLine)
+            call setline(l:i, getline(l:i)[l:indent :])
+        endfor
+    endif
+    write
+endfunction
+
+command! CreateTasksfile execute 'OPedit' | append | call s:CreateTasksfileAfter()

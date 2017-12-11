@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/idanarye/vim-omnipytent.svg?branch=develop)](https://travis-ci.org/idanarye/vim-omnipytent)
+
 REQUIREMENTS
 ============
 
