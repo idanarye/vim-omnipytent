@@ -158,6 +158,9 @@ class ShellCommandExecuter(object):
         self.send_raw = func
         self.parameters = {}
 
+    def __lshift__(self, raw_text):
+        return self.send_raw(raw_text)
+
     def _quote(self, arg):
         if isinstance(arg, self.Raw):
             return str(arg)
@@ -193,21 +196,12 @@ def SH(command):
         raise Exception('Shell error %s while executing `%s`' % (shell_error, command))
 
 
-if bool(int(vim.eval('exists("*term_start")'))):  # Vim 8
-    def __terminal(command):
-        FN.term_start(command, dict(curwin=1))
-elif bool(int(vim.eval('exists("*termopen")'))):  # Neovim
-    def __terminal(command):
-        FN.termopen(command)
-        FN.feedkeys('a', 'n')
-else:
-    __terminal = None
-
-if __terminal:
+from .terminal import Terminal
+if hasattr(Terminal, 'start'):
     @ShellCommandExecuter
     def TERMINAL_TAB(command):
         vim.command('tabnew')
-        __terminal(command)
+        return Terminal.start(command)
 
     class TERMINAL_PANEL(ShellCommandExecuter):
         def size(self, size):
@@ -220,4 +214,4 @@ if __terminal:
         vim.command('botright new')
         vim.command('call winrestview(%s)' % (old_win_view,))
         vim.command('resize %s' % (size,))
-        __terminal(command)
+        return Terminal.start(command)

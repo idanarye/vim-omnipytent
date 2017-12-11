@@ -1,8 +1,10 @@
 import inspect
 
+import vim
+
 from .context import InvocationContext
 from .hacks import function_locals
-from .util import input_list
+from .util import input_list, other_windows
 
 
 class Task(object):
@@ -96,6 +98,46 @@ class OptionsTask(Task):
                 raise Exception('%s is not a valid choice for %s' % (chosen_item, self))
         else:
             raise Exception('Too many arguments for %s - expected 1' % self)
+
+
+class WindowTask(Task):
+    def invoke(self, ctx, *args):
+        task_ctx = ctx.for_task(self)
+        try:
+            window = task_ctx.cache.window
+        except AttributeError:
+            pass
+        else:
+            if window.valid:
+                if task_ctx.is_main:
+                    with other_windows(window):
+                        vim.command('close')
+                else:
+                    try:
+                        passed_data = task_ctx.cache.passed_data
+                    except AttributeError:
+                        task_ctx.pass_data(window)
+                    else:
+                        task_ctx.pass_data(passed_data)
+                    return
+
+        try:
+            del task_ctx.cache.window
+        except AttributeError:
+            pass
+        try:
+            del task_ctx.cache.pass_data
+        except AttributeError:
+            pass
+
+        with other_windows():
+            super(WindowTask, self).invoke(ctx, *args)
+            window = vim.current.window
+        task_ctx.cache.window = window
+        if task_ctx.has_passed_data:
+            task_ctx.cache.passed_data = task_ctx.passed_data
+        else:
+            task_ctx.pass_data(window)
 
 
 def invoke_with_dependencies(tasks_file, task, args):

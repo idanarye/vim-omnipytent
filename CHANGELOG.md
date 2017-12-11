@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add the `changed` context manager for `VAR` and `OPT`.
 - Add utils for working with Vim windows - `grep_windows`, `grep_window` and
   `other_windows`.
+- Add `window` tasks.
+- Add terminal shell executor(returned from `TERMINAL_PANEL` and
+  `TERMINAL_TAB`)
+- Add `<<` operator for shell executors to send raw text.
 
 ### Fixed
 - Fix a doc problem where `:!` was defining a tag instead of refering to it

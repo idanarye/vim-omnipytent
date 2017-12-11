@@ -147,9 +147,12 @@ def grep_window(matcher):
 @contextmanager
 def other_windows(window=None):
     original_window = vim.current.window
+    original_mode = vim.eval('mode()')
     if window:
         vim.current.window = window
     try:
         yield
     finally:
         vim.current.window = original_window
+        if original_mode == 'n':
+            vim.command(r'call feedkeys("\<C-\>\<C-n>")')

@@ -1,7 +1,7 @@
 import re
 
 
-class InvocationContext:
+class InvocationContext(object):
     def __init__(self, task_file, main_task):
         self.dep_data = {}
         self.task_file = task_file
@@ -11,7 +11,7 @@ class InvocationContext:
         return TaskContext(self, task)
 
 
-class TaskContext:
+class TaskContext(object):
     def __init__(self, parent, task):
         self._parent = parent
         self.task = task
@@ -19,6 +19,14 @@ class TaskContext:
 
     def __repr__(self):
         return '<TaskContext: %s>' % self.task.name
+
+    @property
+    def has_passed_data(self):
+        return self.task in self._parent.dep_data
+
+    @property
+    def passed_data(self):
+        return self._parent.dep_data[self.task]
 
     def pass_data(self, data):
         self._parent.dep_data[self.task] = data

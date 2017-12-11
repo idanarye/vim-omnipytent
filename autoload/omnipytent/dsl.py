@@ -1,6 +1,6 @@
 import types
 
-from .tasks import Task, OptionsTask
+from .tasks import Task, OptionsTask, WindowTask
 
 
 def _fluent(func):
@@ -54,6 +54,11 @@ class TaskDeclarator:
     @_fluent
     def options(self):
         self._task_class = OptionsTask
+
+    @property
+    @_fluent
+    def window(self):
+        self._task_class = WindowTask
 
 
 task = TaskDeclarator()

@@ -267,6 +267,9 @@ exposes some helpers to make it easier:
 
   * Use "TERMINAL_PANEL.size(num_rows) to set the size of the terminal panel.
 
+  * "TERMINAL_TAB" and "TERMINAL_PANEL" return a shell executor that can be
+    used to send commands to the opened terminal(it it accepts commands)
+
 All these act as functions that receive the shell command and it's arguments
 ad Python function parameters: >
     @task
@@ -277,6 +280,12 @@ ad Python function parameters: >
 <
 The arguments are shell-escaped automatically - unless they are wrapped with
 "ShellCommandExecuter.Raw".
+
+A shell executor can also be sent unescaped text using the "<<" operator: >
+    @task
+    def compile(ctx):
+        SH << 'gcc main.c -o a.out'
+<
 
 
 CREATING SHELL COMMAND EXECUTERS    *omnipytent-creating-ShellCommandExecuter*
@@ -426,6 +435,35 @@ You can invoke the options task directly to force a re-prompt, or you can
 invoke it with the desired option's caption as argument to set it(there is
 autocompletion for the option argument)
 
+WINDOW TASK                                           *omnipytent-window-task*
+
+A window task is a task for creating and preparing a Vim window. It is used
+like a regular task, but has the following properties:
+
+* After it is finished, Vim returns to the window it was before executing it.
+
+* It automatically passes the window object(|python-window|) of the current
+  window when it finished - unless something else was explicitly passed.
+
+* When used as a dependency, if the window it created in it's previous
+  invocation is still open it will not execute and instead pass the same thing
+  it passed in that previous invocation(either the window object or the
+  manually passed value).
+
+* When called directly, if the window it created in it's previous invocation is
+  still open it will close it before running.
+
+This type of task is useful for creating shell windows and sending commands to
+them: >
+    @task.window
+    def open_shell(ctx):
+        shell = local['bash'] & TERMINAL_PANEL
+        ctx.pass_data(shell)
+
+    @task(open_shell)
+    def compile(ctx)
+        ctx.dep.open_shell << 'gcc main.c -o a.out'
+<
 
 TASK ARGUMENT COMPLETION                 *omnipytent-task-argument-completion*
 
