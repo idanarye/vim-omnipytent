@@ -2,12 +2,19 @@ call themis#helper('command').with(themis#helper('assert'))
 
 let g:omnipytent_filePrefix = 'tests'
 let g:omnipytent_defaultPythonVersion = str2nr($PYVER)
+if g:omnipytent_defaultPythonVersion == 2
+    command -nargs=1 Py python <args>
+elseif g:omnipytent_defaultPythonVersion == 3
+    command -nargs=1 Py python3 <args>
+endif
 
 function! CreateSandbox() abort
     let g:testSandbox = tempname()
     call mkdir(g:testSandbox, 'p')
     call themis#log('Running test in' . g:testSandbox)
     execute 'cd '.g:testSandbox
+    Py import os, vim
+    Py os.chdir(vim.eval('getcwd()'))
 endfunction
 
 function! s:CreateTasksfileAfter()

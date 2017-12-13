@@ -2,15 +2,24 @@ Describe Simple Task Commands
     Before each
         call CreateSandbox()
     End
+    It Correct python version
+        CreateTasksfile
+        @task
+        def check_python_version(ctx):
+            import sys
+            import os
+            FN['themis#log']('python version is %s' % sys.version)
+            assert sys.version_info[0] == int(os.environ['PYVER'])
+.
+        OP check_python_version
+    End
     It Runs tasks
-        call themis#log('nvim ' . has('nvim') . ' Pyver ' . g:omnipytent_defaultPythonVersion)
         CreateTasksfile
         @task
         def foo(ctx):
             with open('foo', 'w') as f:
                 f.write('hello')
-        .
-
+.
         OP foo
         Assert readfile('foo') == ['hello']
     End
