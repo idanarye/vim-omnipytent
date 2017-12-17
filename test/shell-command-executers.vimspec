@@ -1,0 +1,84 @@
+Describe Shell Command Executers
+    Before each
+        call CreateSandbox()
+    End
+
+    It BANG
+        CreateTasksfile
+        @task
+        def str_command(ctx):
+            BANG << 'echo hello > foo'
+
+
+        @task
+        def command_args(ctx):
+            BANG('cp', 'foo', 'bar')
+
+
+        @task
+        def fail(ctx):
+            BANG('cat', 'baz')
+.
+        Assert !filereadable('foo')
+        OP str_command
+        Assert Equals(readfile('foo'), ['hello'])
+
+        Assert !filereadable('bar')
+        OP command_args
+        Assert Equals(readfile('bar'), ['hello'])
+
+        OP fail
+    End
+
+    It SH
+        CreateTasksfile
+        @task
+        def str_command(ctx):
+            SH << 'echo hello > foo'
+
+
+        @task
+        def command_args(ctx):
+            SH('cp', 'foo', 'bar')
+
+
+        @task
+        def fail(ctx):
+            SH('cat', 'baz')
+.
+        Assert !filereadable('foo')
+        OP str_command
+        Assert Equals(readfile('foo'), ['hello'])
+
+        Assert !filereadable('bar')
+        OP command_args
+        Assert Equals(readfile('bar'), ['hello'])
+
+        Throws :OP fail
+    End
+
+    It TERMINAL_PANEL
+        CreateTasksfile
+        @task
+        def str_command(ctx):
+            TERMINAL_PANEL << 'sleep 3 && echo hello > foo'
+
+        @task
+        def shell_executor_object(ctx):
+            shell = TERMINAL_PANEL('python2')
+            shell << 'f = open("bar", "w")'
+            shell << 'f.write("howdy")'
+            shell << 'f.close()'
+.
+        Assert !filereadable('foo')
+        OP str_command
+        Assert !filereadable('foo')
+        Wait filereadable('foo')
+        Assert Equals(readfile('foo'), ['hello'])
+
+        Assert !filereadable('bar')
+        OP shell_executor_object
+        Wait filereadable('bar')
+        Assert Equals(readfile('bar'), ['howdy'])
+    End
+End

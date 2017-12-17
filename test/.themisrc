@@ -3,9 +3,9 @@ call themis#helper('command').with(themis#helper('assert'))
 let g:omnipytent_filePrefix = 'tests'
 let g:omnipytent_defaultPythonVersion = str2nr($PYVER)
 if g:omnipytent_defaultPythonVersion == 2
-    command -nargs=1 Py python <args>
+    command! -nargs=1 Py python <args>
 elseif g:omnipytent_defaultPythonVersion == 3
-    command -nargs=1 Py python3 <args>
+    command! -nargs=1 Py python3 <args>
 endif
 
 function! CreateSandbox() abort
@@ -17,7 +17,7 @@ function! CreateSandbox() abort
     Py os.chdir(vim.eval('getcwd()'))
 endfunction
 
-function! s:CreateTasksfileAfter()
+function! s:CreateTasksfileAfter() abort
     let l:startFrom = 3
     let l:lastLine = line('$')
     for l:i in range(l:startFrom, l:lastLine)
@@ -37,3 +37,34 @@ function! s:CreateTasksfileAfter()
 endfunction
 
 command! CreateTasksfile execute 'OPedit' | append | call s:CreateTasksfileAfter()
+
+function! s:CreateWaitCommand(predExpr) abort
+    let l:sleep = 0.1
+    let l:timeout = 10
+    let l:paramsMap = {'s': 'sleep', 't': 'timeout'}
+    let l:predExpr = a:predExpr
+    while 1
+        let l:m = matchlist(l:predExpr, '\v^\-(\w)([0-9.]+)\s+(.*)$')
+        if empty(l:m) || !has_key(l:paramsMap, l:m[1])
+            break
+        endif
+        let l:mapTo = l:paramsMap[l:m[1]]
+        let l:[l:mapTo] = str2float(l:m[2])
+        let l:predExpr = l:m[3]
+    endwhile
+    let l:start = string(reltime())
+    let l:sleep = float2nr(l:sleep * 1000)
+    return join([
+                \ 'while 1',
+                \ '    if ' . l:predExpr,
+                \ '        break',
+                \ '    endif',
+                \ '    if ' . string(l:timeout) . ' < reltimefloat(reltime(' . l:start . '))',
+                \ '        throw "Timeout while waiting for " . ' . string(l:predExpr),
+                \ '    endif',
+                \ '    sleep ' . string(l:sleep) . ' m',
+                \ 'endwhile',
+                \ ], "\n")
+endfunction
+
+command! -nargs=1 Wait execute s:CreateWaitCommand(<q-args>)

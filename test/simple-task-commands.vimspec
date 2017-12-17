@@ -2,6 +2,7 @@ Describe Simple Task Commands
     Before each
         call CreateSandbox()
     End
+
     It Correct python version
         CreateTasksfile
         @task
@@ -13,14 +14,34 @@ Describe Simple Task Commands
 .
         OP check_python_version
     End
+
     It Runs tasks
         CreateTasksfile
         @task
-        def foo(ctx):
+        def write_file(ctx):
             with open('foo', 'w') as f:
                 f.write('hello')
 .
-        OP foo
-        Assert readfile('foo') == ['hello']
+        OP write_file
+        Assert Equals(readfile('foo'), ['hello'])
+    End
+
+    It Task with arguments
+        CreateTasksfile
+        @task
+        def write_file(ctx, filename, data='hello'):
+            with open(filename, 'w') as f:
+                f.write(data)
+.
+
+        Throws OP write_file
+
+        Assert !filereadable('foo')
+        OP write_file foo
+        Assert Equals(readfile('foo'), ['hello'])
+
+        Assert !filereadable('bar')
+        OP write_file bar howdy
+        Assert Equals(readfile('bar'), ['howdy'])
     End
 End
