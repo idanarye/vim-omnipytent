@@ -61,7 +61,7 @@ Describe Shell Command Executers
         CreateTasksfile
         @task
         def str_command(ctx):
-            TERMINAL_PANEL << 'sleep 3 && echo hello > foo'
+            TERMINAL_PANEL('sh', '-c', 'sleep 3 && echo hello > foo')
 
         @task
         def shell_executor_object(ctx):
