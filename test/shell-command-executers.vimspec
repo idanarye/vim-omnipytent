@@ -1,6 +1,6 @@
 Describe Shell Command Executers
     Before each
-        call CreateSandbox()
+        call PrepareForTest()
     End
 
     It BANG
@@ -80,5 +80,28 @@ Describe Shell Command Executers
         OP shell_executor_object
         Wait filereadable('bar')
         Assert Equals(readfile('bar'), ['howdy'])
+    End
+
+    It Custom executor
+        CreateTasksfile
+        from omnipytent.execution import ShellCommandExecuter
+
+
+        @ShellCommandExecuter
+        def CREATE_SH_FILE(command):
+            with open('executor.sh', 'w') as f:
+                f.write("#!/bin/sh\n")
+                f.write(command)
+
+        @task
+        def str_command(ctx):
+            CREATE_SH_FILE << 'echo hello > foo'
+            from subprocess import check_call
+            check_call(['chmod', '+x', 'executor.sh'])
+            check_call(['./executor.sh'])
+.
+        Assert !filereadable('foo')
+        OP str_command
+        Assert Equals(readfile('foo'), ['hello'])
     End
 End

@@ -1,6 +1,6 @@
 Describe Simple Task Commands
     Before each
-        call CreateSandbox()
+        call PrepareForTest()
     End
 
     It Correct python version

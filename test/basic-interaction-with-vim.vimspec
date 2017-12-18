@@ -1,0 +1,73 @@
+Describe Basic Interaction With Vim
+    Before each
+        call PrepareForTest()
+    End
+    It Vim variables
+        CreateTasksfile
+        @task
+        def set_variable(ctx):
+            VAR['b:foo'] = 'bar'
+
+
+        @task
+        def read_variable(ctx):
+            assert VAR['b:foo'] == 'baz'
+.
+
+        OP set_variable
+        Assert Equals(b:foo, 'bar')
+
+        Throws :OP read_variable
+        let b:foo = 'baz'
+        OP read_variable
+    End
+
+    It Vim options
+        CreateTasksfile
+        @task
+        def set_option(ctx):
+            OPT.l.filetype = 'python'
+
+
+        @task
+        def read_option(ctx):
+            assert OPT.l.filetype == 'ruby'
+.
+
+        OP set_option
+        Assert Equals(&filetype, 'python')
+
+        Throws :OP read_option
+        setlocal filetype=ruby
+        OP read_option
+    End
+
+    It Vim commands
+        CreateTasksfile
+        @task
+        def run_command(ctx):
+            CMD.SetFoo('bar')
+.
+
+        command! -buffer -nargs=1 SetFoo let b:foo = <q-args>
+        OP run_command
+        Assert Equals(b:foo,'bar')
+    End
+
+    It Vim functions
+        CreateTasksfile
+        @task
+        def check_function(ctx):
+            assert FN['b:.foo']() == 'bar'
+.
+        function! b:.foo() abort
+            return 'bar'
+        endfunction
+        OP check_function
+
+        function! b:.foo() abort
+            return 'baz'
+        endfunction
+        Throws :OP check_function
+    End
+End

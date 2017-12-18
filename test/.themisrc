@@ -8,11 +8,13 @@ elseif g:omnipytent_defaultPythonVersion == 3
     command! -nargs=1 Py python3 <args>
 endif
 
-function! CreateSandbox() abort
+function! PrepareForTest() abort
     let g:testSandbox = tempname()
     call mkdir(g:testSandbox, 'p')
     call themis#log('Running test in' . g:testSandbox)
     execute 'cd '.g:testSandbox
+    new
+    only!
     Py import os, vim
     Py os.chdir(vim.eval('getcwd()'))
 endfunction
