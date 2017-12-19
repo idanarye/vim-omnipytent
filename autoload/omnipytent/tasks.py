@@ -111,7 +111,7 @@ class WindowTask(Task):
             if window.valid:
                 if task_ctx.is_main:
                     with other_windows(window):
-                        vim.command('close')
+                        vim.command('bdelete!')
                 else:
                     try:
                         passed_data = task_ctx.cache.passed_data
