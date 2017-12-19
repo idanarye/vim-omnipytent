@@ -1,0 +1,66 @@
+Describe Window utils
+    Before each
+        call PrepareForTest()
+    End
+
+    After each
+        buffer foo
+        bdelete!
+    End
+
+    It Do stuff in other window
+        CreateTasksfile
+        from omnipytent.util import grep_window, other_windows
+        @task
+        def append_to_foo(ctx, line):
+            with other_windows(grep_window('foo')):
+                vim.current.buffer.append(line)
+.
+        new
+        only
+        new
+        file foo
+        wincmd p
+
+        Assert Equals(getline(1, '$'), [''])
+        Assert Equals(getbufline('foo', 1, '$'), [''])
+
+        OP append_to_foo hello
+        Assert Equals(getline(1, '$'), [''])
+        Assert Equals(getbufline('foo', 1, '$'), ['', 'hello'])
+
+        OP append_to_foo world
+        Assert Equals(getline(1, '$'), [''])
+        Assert Equals(getbufline('foo', 1, '$'), ['', 'hello', 'world'])
+    End
+
+    It Window creating util
+        CreateTasksfile
+        from omnipytent.util import other_windows
+
+        @task.window
+        def foo_window(ctx):
+            CMD.new()
+            CMD.file('foo')
+
+        @task(foo_window)
+        def append_to_foo(ctx, line):
+            with other_windows(ctx.dep.foo_window):
+                vim.current.buffer.append(line)
+.
+        new
+        only
+
+        Assert Equals(getline(1, '$'), [''])
+        " foo does not exist yet - so it's contents are an empty list `[]`
+        Assert Equals(getbufline('foo', 1, '$'), [])
+
+        OP append_to_foo hello
+        Assert Equals(getline(1, '$'), [''])
+        Assert Equals(getbufline('foo', 1, '$'), ['', 'hello'])
+
+        OP append_to_foo world
+        Assert Equals(getline(1, '$'), [''])
+        Assert Equals(getbufline('foo', 1, '$'), ['', 'hello', 'world'])
+    End
+End
