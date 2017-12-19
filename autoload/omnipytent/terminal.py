@@ -31,6 +31,7 @@ class Terminal(ShellCommandExecuter):
         def __start(command):
             job_id = FN.termopen(command)
             FN.feedkeys('a', 'n')
+            vim.command('normal! G')
             return job_id
 
         def write(self, text):

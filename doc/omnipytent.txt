@@ -295,6 +295,7 @@ exposes some helpers to make it easier:
   with |terminal| support.
 
   * Use "TERMINAL_PANEL.size(num_rows) to set the size of the terminal panel.
+  * Use "TERMINAL_PANEL.vert to create a vertical panel instead.
 
   * "TERMINAL_TAB" and "TERMINAL_PANEL" return a shell executor that can be
     used to send commands to the opened terminal(it it accepts commands)

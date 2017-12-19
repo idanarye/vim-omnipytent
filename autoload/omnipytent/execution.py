@@ -156,7 +156,10 @@ class ShellCommandExecuter(object):
 
     def __init__(self, func):
         self.send_raw = func
-        self.parameters = {}
+
+    @property
+    def parameters(self):
+        return self.__dict__.setdefault('parameters', {})
 
     def __lshift__(self, raw_text):
         return self.send_raw(raw_text)
@@ -207,11 +210,19 @@ if hasattr(Terminal, 'start'):
         def size(self, size):
             return self(size=size)
 
+        @property
+        def vert(self):
+            if 'size' in self.parameters:
+                return self(vertical=True)
+            else:
+                return self(vertical=True, size=40)
+
     @TERMINAL_PANEL
-    def TERMINAL_PANEL(command, size=5):
+    def TERMINAL_PANEL(command, size=5, vertical=False):
         vim.command('redraw')  # Release 'Press ENTER or type command to continue'
         old_win_view = vim.eval('winsaveview()')
-        vim.command('botright new')
-        vim.command('call winrestview(%s)' % (old_win_view,))
-        vim.command('resize %s' % (size,))
+        vertical = 'vertical ' if vertical else ''
+        vim.command(vertical + 'botright new')
+        vim.command(vertical + 'call winrestview(%s)' % (old_win_view,))
+        vim.command(vertical + 'resize %s' % (size,))
         return Terminal.start(command)
