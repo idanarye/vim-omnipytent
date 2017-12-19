@@ -1,0 +1,27 @@
+Describe Options task
+    Before each
+        call PrepareForTest()
+    End
+
+    It Options task
+        CreateTasksfile
+        @task.options
+        def thing(ctx):
+            foo = 'FOO'
+            bar = 'BAR'
+            baz = 'BAZ'
+
+        @task(thing)
+        def check(ctx, value):
+            assert ctx.dep.thing == value
+.
+        OP thing foo
+        OP check FOO
+
+        OP thing bar
+        OP check BAR
+
+        OP thing baz
+        OP check BAZ
+    End
+End
