@@ -76,7 +76,7 @@ class TasksFile:
                 self.tasks[ident] = value
         self.last_modified = os.path.getmtime(self.filename)
         self.tasks_cache = self.tasks_cache
-        for key in self.tasks_cache.keys():
+        for key in list(self.tasks_cache.keys()):
             if key not in self.tasks:
                 del self.tasks_cache[key]
 

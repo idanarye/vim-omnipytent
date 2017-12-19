@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix binary-vs-string problem with Python3 and Vim
 - Fix Python type problems by making all `execution.py` classes subclass
   `object`.
+- Fix bug when cleaning tasks cache.
 
 ## 1.1.0 - 2017-12-01
 ### Added
