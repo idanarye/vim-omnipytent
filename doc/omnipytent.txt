@@ -17,6 +17,35 @@ design - but in Python, so it could be used in neovim(which did not have Ruby
 support at the time)
 
 
+CHEAT SHEET                                            *omnipytent-cheat-sheet*
+
+Running tasks:               |:OP| |:OP2| |:OP3|
+Editing tasks:               |:OP2edit| |:OP3edit| |:OPvedit|
+Writing tasks:               |omnipytent-tasks-syntax|
+                            |omnipytent-task-context-object|
+Configuration:               |g:omnipytent_defaultPythonVersion|
+                            |g:omnipytent_filePrefix|
+Running shell commands:      |omnipytent-BANG| |omnipytent-SH|
+                            |omnipytent-TERMINAL_PANEL|
+                            |omnipytent-TERMINAL_TAB|
+                            |omnipytent-ShellCommandExecuter|
+Basic interaction with Vim:  |omnipytent-CMD| |omnipytent-FN| |omnipytent-OPT|
+                            |omnipytent-VAR| |omnipytent-vim_eval|
+                            |omnipytent-vim_repr|
+Task dependencies:           |omnipytent-task-dependencies|
+                            |omnipytent-pass_data| |omnipytent-dep|
+Special tasks:               |omnipytent-options-task| |omnipytent-window-task|
+Task argument completion:    |omnipytent-task-argument-completion|
+                            |omnipytent-dir_completer|
+                            |omnipytent-file_completer|
+Working with Vim windows:    |omnipytent-grep_window| |omnipytent-grep_windows|
+                            |omnipytent-other_windows|
+3rd party extensions:        |omnipytent-plumbum-integration| |omnipytent.ext|
+Working with the quickfix:   |omnipytent-populate_quickfix|
+                            |omnipytent-populate_loclist|
+Other helpers:               |omnipytent-input_list|
+
+
 KEY FEATURES                                          *omnipytent-key-features*
 
 * Tasks run inside the Vim session environment and can interact with it - read

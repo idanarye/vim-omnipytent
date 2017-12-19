@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `TERMINAL_TAB`)
 - Add `<<` operator for shell executors to send raw text.
 - Tests(about time)
+- A cheat sheet in the doc
 
 ### Fixed
 - Fix a doc problem where `:!` was defining a tag instead of refering to it
