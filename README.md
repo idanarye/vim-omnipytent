@@ -17,6 +17,8 @@ and as out-of-your-way as possible. Omnipytent is the successor to
 design - but in Python, so it could be used in neovim(which did not have Ruby
 support at the time)
 
+Blog post: https://dev.to/idanarye/omnipytent-5g5l
+
 KEY FEATURES
 ============
 
