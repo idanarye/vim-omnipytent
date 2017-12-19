@@ -1,0 +1,60 @@
+Describe Filling the quickfix
+    Before each
+        call PrepareForTest()
+        cfile /dev/null
+        lfile /dev/null
+    End
+
+    After each
+        cfile /dev/null
+        lfile /dev/null
+    End
+
+    It Populate the quickfixlist
+        CreateTasksfile
+        from omnipytent.util import populate_quickfix
+
+        @task
+        def populate_errors(ctx):
+            with populate_quickfix() as qf:
+                qf(filename=vim.current.buffer.name, lnum=2, text='hello world')
+                qf(filename=vim.current.buffer.name, lnum=4, text='howdy universe')
+.
+
+        Assert Equals(getqflist(), [])
+        OP populate_errors
+        let l:qf = getqflist()
+
+        Assert Equals(l:qf[0].bufnr, bufnr(''))
+        Assert Equals(l:qf[0].lnum, 2)
+        Assert Equals(l:qf[0].text, 'hello world')
+
+        Assert Equals(l:qf[1].bufnr, bufnr(''))
+        Assert Equals(l:qf[1].lnum, 4)
+        Assert Equals(l:qf[1].text, 'howdy universe')
+    End
+
+    It Populate the location list
+        CreateTasksfile
+        from omnipytent.util import populate_loclist
+
+        @task
+        def populate_errors(ctx):
+            with populate_loclist() as ll:
+                ll(filename=vim.current.buffer.name, lnum=2, text='hello world')
+                ll(filename=vim.current.buffer.name, lnum=4, text='howdy universe')
+.
+
+        Assert Equals(getqflist(), [])
+        OP populate_errors
+        let l:ll = getloclist(winnr())
+
+        Assert Equals(l:ll[0].bufnr, bufnr(''))
+        Assert Equals(l:ll[0].lnum, 2)
+        Assert Equals(l:ll[0].text, 'hello world')
+
+        Assert Equals(l:ll[1].bufnr, bufnr(''))
+        Assert Equals(l:ll[1].lnum, 4)
+        Assert Equals(l:ll[1].text, 'howdy universe')
+    End
+End
