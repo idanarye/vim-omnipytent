@@ -1,4 +1,7 @@
+import vim
+
 import re
+import os.path
 
 
 class InvocationContext(object):
@@ -6,6 +9,9 @@ class InvocationContext(object):
         self.dep_data = {}
         self.task_file = task_file
         self.main_task = main_task
+        self.start_dir = vim.eval('getcwd()')
+        self.start_window = vim.current.window
+        self.start_buffer = vim.current.buffer
 
     def for_task(self, task):
         return TaskContext(self, task)
@@ -41,6 +47,24 @@ class TaskContext(object):
     @property
     def is_main(self):
         return self._parent.main_task == self.task
+
+    @property
+    def task_dir(self):
+        return self._parent.task_file.tasks_dir
+
+    proj_dir = task_dir
+
+    @property
+    def file_dir(self):
+        filename = self._parent.start_buffer.name
+        if filename:
+            return os.path.dirname(filename)
+        else:
+            return self.cur_dir
+
+    @property
+    def cur_dir(self):
+        return self._parent.start_dir
 
 
 class TaskCache:

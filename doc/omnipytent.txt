@@ -4,7 +4,7 @@
 Author:  Idan Arye <https://github.com/idanarye/>
 License: Same terms as Vim itself (see |license|)
 
-Version: 1.2.0
+Version: 1.2.0+
 
 INTRODUCTION                                                       *omnipytent*
 
@@ -161,6 +161,9 @@ tasks if you already have a tasks file, you can usually just use |:OP|.
 
 |:OP| expects the task's name as the first argument. If the task has arguments,
 they should be added as additional arguments to *:OP*.
+
+Tasks will run in the directory of their tasks file - regardless of Vim's CWD
+at the moment of their invocation.
 
 
 TASKS SYNTAX                                         *omnipytent-tasks-syntax*
@@ -555,6 +558,11 @@ An *omnipytent-completion-context-object* "ctx" contains:
 * "ctx.cmd_line"    The entire command line.
 * "ctx.cursor_pos"  The cursor position in the command line.
 * "ctx.task"        The task object.
+
+* "ctx.proj_dir"    The directory of the project.
+* "ctx.task_dir"    The directory where the task is defined.
+* "ctx.cur_dir"     The directory Vim was at when the task was invoked.
+* "ctx.file_dir"    The directory of the file that was opened at vim.
 
 
 OTHER HELPERS              *omnipytent-other-helpers* *omnipytent-utils-module*

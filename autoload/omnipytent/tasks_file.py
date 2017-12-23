@@ -1,7 +1,10 @@
 import vim
+
 import sys
+import os
 import os.path
 import imp
+from contextlib import contextmanager
 
 from .tasks import Task
 from .context import CompletionContext
@@ -9,9 +12,22 @@ from .context import CompletionContext
 
 class TasksFile:
     def __init__(self):
-        self.filename = self.default_name()
+        self.filename = self.find_tasks_file(self.default_name())
         self.last_modified = None
         self.tasks_cache = {}
+
+    @staticmethod
+    def find_tasks_file(filename):
+        task_dir = os.path.abspath(vim.eval('getcwd()'))
+        while True:
+            tasks_file_path = os.path.abspath(os.path.join(task_dir, filename))
+            if os.path.isfile(tasks_file_path):
+                return tasks_file_path
+            parent_dir = os.path.abspath(os.path.join(task_dir, os.pardir))
+            if len(task_dir) <= len(parent_dir):
+                break
+            task_dir = parent_dir
+        return os.path.abspath(os.path.join(vim.eval('getcwd()'), filename))
 
     def open(self, on_task=None):
         vim.command('edit %s' % self.filename)
@@ -107,12 +123,38 @@ class TasksFile:
                                                           cmd_line=cmd_line,
                                                           cursor_pos=cursor_pos)
 
+    @property
+    def tasks_dir(self):
+        return os.path.dirname(self.filename)
+
+    @contextmanager
+    def in_tasks_dir_context(self):
+        origdir_python = os.getcwd()
+        origdir_vim = vim.eval('getcwd()')
+        tasks_dir = self.tasks_dir
+
+        if tasks_dir != origdir_vim:
+            vim.command('cd ' + tasks_dir)
+
+        if tasks_dir != origdir_python:
+            os.chdir(tasks_dir)
+
+        yield
+
+        if tasks_dir != origdir_vim and vim.eval('getcwd()') == tasks_dir:
+            vim.command('cd ' + origdir_vim)
+
+        if tasks_dir != origdir_python and os.getcwd() == tasks_dir:
+            os.chdir(origdir_python)
+
 
 __last_tasks_file = [None]
 
 
 def get_tasks_file():
     if __last_tasks_file[0] is None:
+        __last_tasks_file[0] = TasksFile()
+    elif __last_tasks_file[0].filename != TasksFile.find_tasks_file(TasksFile.default_name()):
         __last_tasks_file[0] = TasksFile()
     return __last_tasks_file[0]
 

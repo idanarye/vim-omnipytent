@@ -13,10 +13,9 @@ function! PrepareForTest() abort
     call mkdir(g:testSandbox, 'p')
     call themis#log('Running test in' . g:testSandbox)
     execute 'cd '.g:testSandbox
+    only!
     new
     only!
-    Py import os, vim
-    Py os.chdir(vim.eval('getcwd()'))
 endfunction
 
 function! s:CreateTasksfileAfter() abort

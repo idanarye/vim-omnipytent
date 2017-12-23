@@ -31,8 +31,8 @@ endif
 function! s:guessPythonVersion()
     if has('python')
         if has('python3')
-            let l:has2 = filereadable(pyeval('omnipytent.vim_plugin._tasks_file_name()'))
-            let l:has3 = filereadable(py3eval('omnipytent.vim_plugin._tasks_file_name()'))
+            let l:has2 = filereadable(pyeval('omnipytent.vim_plugin._tasks_file_path()'))
+            let l:has3 = filereadable(py3eval('omnipytent.vim_plugin._tasks_file_path()'))
             if l:has2
                 if l:has3
                     throw "Can't decide on Python version - task files exist for both"
@@ -134,8 +134,8 @@ endfunction
 
 function! omnipytent#convertTasksFilePythonVersion()
     if has('python') && has('python3')
-        let l:tasksfile2 = pyeval('omnipytent.vim_plugin._tasks_file_name()')
-        let l:tasksfile3 = py3eval('omnipytent.vim_plugin._tasks_file_name()')
+        let l:tasksfile2 = pyeval('omnipytent.vim_plugin._tasks_file_path()')
+        let l:tasksfile3 = py3eval('omnipytent.vim_plugin._tasks_file_path()')
         let l:has2 = filereadable(l:tasksfile2)
         let l:has3 = filereadable(l:tasksfile3)
         if l:has2 && l:has3

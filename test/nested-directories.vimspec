@@ -1,0 +1,110 @@
+Describe Nested Directories
+    Before each
+        call PrepareForTest()
+    End
+
+    It Run tasks from parent directories
+        CreateTasksfile
+        @task
+        def foo(ctx):
+            pass
+.
+        call mkdir('bar')
+        cd bar
+        OP foo
+    End
+
+    It Edit tasks in parent directories
+        CreateTasksfile
+        @task
+        def foo(ctx):
+            pass
+.
+        OPedit
+        let l:tasks_file_path = expand('%:p')
+        call mkdir('bar')
+        cd bar
+        new
+        only!
+        OPedit foo
+        Assert Equals(expand('%:p'), l:tasks_file_path)
+    End
+
+    It Create new tasks in parent directories
+        CreateTasksfile
+        @task
+        def foo(ctx):
+            pass
+.
+        OPedit
+        let l:tasks_file_path = expand('%:p')
+        call mkdir('bar')
+        cd bar
+        new
+        only!
+        OPedit bar
+        Assert Equals(expand('%:p'), l:tasks_file_path)
+    End
+
+    It Python commands run in task directories
+        CreateTasksfile
+        @task
+        def foo(ctx):
+            with open('baz', 'w') as f:
+                f.write('qux')
+.
+        call mkdir('bar')
+        cd bar
+        OP foo
+        cd ..
+        Assert Equals(readfile('baz'), ['qux'])
+    End
+
+    It Vim commands run in task directories
+        CreateTasksfile
+        @task
+        def foo(ctx):
+            FN.writefile(['qux'], 'baz')
+.
+        call mkdir('bar')
+        cd bar
+        OP foo
+        cd ..
+        Assert Equals(readfile('baz'), ['qux'])
+    End
+
+    It Paths in context objetct
+        CreateTasksfile
+        import os.path
+
+        @task
+        def verify(ctx, test_dir):
+            assert ctx.proj_dir == test_dir
+            assert ctx.task_dir == test_dir
+            assert ctx.cur_dir == os.path.join(test_dir, 'foo')
+            assert ctx.file_dir == os.path.join(test_dir, 'foo', 'bar')
+.
+        let l:test_dir = getcwd()
+        call mkdir('foo')
+        cd foo
+        call mkdir('bar')
+        edit bar/baz
+        execute 'OP verify ' . fnameescape(l:test_dir)
+    End
+
+    It file_dir for empty buffers
+        CreateTasksfile
+        import os.path
+
+        @task
+        def verify(ctx, cwd):
+            assert ctx.file_dir == cwd
+.
+        call mkdir('foo')
+        cd foo
+        only!
+        new
+        only!
+        execute 'OP verify ' . fnameescape(getcwd())
+    End
+End

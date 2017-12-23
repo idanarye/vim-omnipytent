@@ -151,8 +151,8 @@ def invoke_with_dependencies(tasks_file, task, args):
         stack += popped_task.dependencies
 
     already_invoked = set()
-    for task in run_order:
-        if task not in already_invoked:
-            already_invoked.add(task)
-            task.invoke(ctx, *args)
-
+    with tasks_file.in_tasks_dir_context():
+        for task in run_order:
+            if task not in already_invoked:
+                already_invoked.add(task)
+                task.invoke(ctx, *args)

@@ -6,8 +6,8 @@ from .tasks_file import TasksFile, get_tasks_file
 from .tasks import invoke_with_dependencies
 
 
-def _tasks_file_name():
-    return TasksFile.default_name()
+def _tasks_file_path():
+    return TasksFile.find_tasks_file(TasksFile.default_name())
 
 
 def _api_entry_point(command):
