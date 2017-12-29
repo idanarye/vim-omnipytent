@@ -25,6 +25,7 @@ Writing tasks:               |omnipytent-tasks-syntax|
                             |omnipytent-task-context-object|
 Configuration:               |g:omnipytent_defaultPythonVersion|
                             |g:omnipytent_filePrefix|
+                            |g:omnipytent_projectRootMarkers|
 Running shell commands:      |omnipytent-BANG| |omnipytent-SH|
                             |omnipytent-TERMINAL_PANEL|
                             |omnipytent-TERMINAL_TAB|
@@ -97,6 +98,7 @@ Example: >
 Other configuration options:
 
 * |g:omnipytent_defaultPythonVersion|
+* |g:omnipytent_projectRootMarkers|
 
 
 PYTHON VERSIONS                                   *omnipytent-python-versions*
@@ -151,6 +153,14 @@ You can add the name of a task as an argument to these commands - for example: >
 <
 This will open the tasks file and place the cursor on the "run" task. If the
 "run" task does not exist, it will create a basic skeleton for it.
+
+If a tasks file exists in a parent directory(or parent of parent, etc.), it
+will be detected an used. If there is no tasks file in a parent directory, you
+can set the *g:omnipytent_projectRootMarkers* to a list of glob patterns. If
+any of them is detected in a parent directory(or parent of parent, etc.) that
+directory will be picked as the project root for the new tasks file.
+Otherwise, the new tasks file will be created in the current
+directory(|getcwd()|).
 
 
 RUNNING TASKS                                       *omnipytent-running-tasks*

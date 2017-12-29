@@ -3,6 +3,10 @@ Describe Nested Directories
         call PrepareForTest()
     End
 
+    After each
+        unlet! g:omnipytent_projectRootMarkers
+    End
+
     It Run tasks from parent directories
         CreateTasksfile
         @task
@@ -106,5 +110,23 @@ Describe Nested Directories
         new
         only!
         execute 'OP verify ' . fnameescape(getcwd())
+    End
+
+    It detects directory using special metafiles
+        let g:omnipytent_projectRootMarkers = ['.projectroot']
+        let l:test_dir = getcwd()
+
+        call mkdir('foo')
+        cd foo
+        !touch .projectroot
+        call mkdir('bar')
+        cd bar
+        OPedit
+        write
+
+        execute 'cd ' . l:test_dir
+        let l:tasks_file_dir = fnamemodify(glob('**/*.omnipytent.*.py'), ':h')
+
+        Assert Equals(l:tasks_file_dir, 'foo')
     End
 End
