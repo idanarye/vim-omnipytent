@@ -3,6 +3,7 @@ import vim
 import sys
 import os
 import os.path
+import glob
 import imp
 from contextlib import contextmanager
 
@@ -18,15 +19,44 @@ class TasksFile:
 
     @staticmethod
     def find_tasks_file(filename):
-        task_dir = os.path.abspath(vim.eval('getcwd()'))
-        while True:
-            tasks_file_path = os.path.abspath(os.path.join(task_dir, filename))
+        def search_upward(delegate):
+            check_dir = os.path.abspath(vim.eval('getcwd()'))
+            while True:
+                result = delegate(check_dir)
+                if result:
+                    return result
+
+                parent_dir = os.path.abspath(os.path.join(check_dir, os.pardir))
+                if len(check_dir) <= len(parent_dir):
+                    break
+                check_dir = parent_dir
+
+        @search_upward
+        def tasks_file_path(check_dir):
+            tasks_file_path = os.path.abspath(os.path.join(check_dir, filename))
             if os.path.isfile(tasks_file_path):
                 return tasks_file_path
-            parent_dir = os.path.abspath(os.path.join(task_dir, os.pardir))
-            if len(task_dir) <= len(parent_dir):
-                break
-            task_dir = parent_dir
+
+        if tasks_file_path:
+            return tasks_file_path
+
+        try:
+            project_root_markers = vim.eval('g:omnipytent_projectRootMarkers')
+        except Exception as e:
+            pass
+        else:
+            if not isinstance(project_root_markers, list):
+                raise Exception('g:omnipytent_projectRootMarkers is not a list')
+
+            @search_upward
+            def project_root_path(check_dir):
+                for pattern in project_root_markers:
+                    for found in glob.iglob(os.path.join(check_dir, pattern)):
+                        return os.path.join(check_dir, filename)
+
+            if project_root_path:
+                return project_root_path
+
         return os.path.abspath(os.path.join(vim.eval('getcwd()'), filename))
 
     def open(self, on_task=None):
@@ -103,7 +133,7 @@ class TasksFile:
     def default_name():
         try:
             return '%s.omnipytent.%s.py' % (vim.eval('g:omnipytent_filePrefix'), sys.version_info.major)
-        except KeyError:
+        except Exception:
             raise Exception('g:omnipytent_filePrefix not set')
 
     @property
