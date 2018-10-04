@@ -19,12 +19,23 @@ class Task(object):
         self.dependencies = []
         self.completers = []
 
+    def _run_func_as_generator(self, *args, **kwargs):
+        result = self.func(*args, **kwargs)
+        if inspect.isgenerator(result):
+            try:
+                yielded = next(result)
+                while True:
+                    yield yielded
+                    yielded = result.send(yielded.returned_value)
+            except StopIteration:
+                pass
+
     def invoke(self, ctx, *args):
         ctx = ctx.for_task(self)
-        if ctx.is_main:
-            self.func(ctx, *args)
-        else:
-            self.func(ctx)
+        if not ctx.is_main:
+            args = ()
+        for yielded in self._run_func_as_generator(ctx, *args):
+            yield yielded
 
     def __repr__(self):
         return '<Task: %s>' % self.name
@@ -63,6 +74,8 @@ class OptionsTask(Task):
             return []
 
     def invoke(self, ctx, *args):
+        if False:
+            yield  # force this into a genrator
         ctx = ctx.for_task(self)
         if len(self.__func_args_set) == 0:
             options = function_locals(self.func)
@@ -131,7 +144,8 @@ class WindowTask(Task):
             pass
 
         with other_windows():
-            super(WindowTask, self).invoke(ctx, *args)
+            for yielded in super(WindowTask, self).invoke(ctx, *args):
+                yield yielded
             window = vim.current.window
         task_ctx.cache.window = window
         if task_ctx.has_passed_data:
@@ -155,4 +169,5 @@ def invoke_with_dependencies(tasks_file, task, args):
         for task in run_order:
             if task not in already_invoked:
                 already_invoked.add(task)
-                task.invoke(ctx, *args)
+                for yielded in task.invoke(ctx, *args):
+                    yield yielded

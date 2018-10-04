@@ -62,7 +62,7 @@ function! s:guessPythonVersion()
     endif
 endfunction
 
-function! omnipytent#invoke(pythonVersion, line1, line2, count, ...)
+function! s:apiEntryPointCommand(pythonVersion, command)
     let l:pythonVersion = a:pythonVersion
     if l:pythonVersion == 0
         let l:pythonVersion = s:guessPythonVersion()
@@ -71,13 +71,25 @@ function! omnipytent#invoke(pythonVersion, line1, line2, count, ...)
     " Put the command for invoking the Python code in a varible, so it if
     " fails Vim won't cry about a missing endif.
     if l:pythonVersion == 2
-        let l:cmd = 'python omnipytent.vim_plugin._api_entry_point("invoke")'
+        let l:baseCmd = 'python '
     elseif l:pythonVersion == 3
-        let l:cmd = 'python3 omnipytent.vim_plugin._api_entry_point("invoke")'
+        let l:baseCmd = 'python3 '
     else
         throw 'Unknown Python version '.a:pythonVersion
     endif
-    execute l:cmd
+    return printf('%s omnipytent.vim_plugin._api_entry_point(%s)', l:baseCmd, string(a:command))
+endfunction
+
+function! omnipytent#invoke(pythonVersion, line1, line2, count, ...)
+    execute s:apiEntryPointCommand(a:pythonVersion, 'invoke')
+endfunction
+
+function! omnipytent#resume(executor, ...)
+    let l:parts = split(a:executor, ':')
+    let l:pythonVersion = str2nr(l:parts[0])
+    let l:executor = str2nr(l:parts[1])
+
+    execute s:apiEntryPointCommand(l:pythonVersion, 'resume')
 endfunction
 
 function! omnipytent#editTask(pythonVersion, splitMode, ...)

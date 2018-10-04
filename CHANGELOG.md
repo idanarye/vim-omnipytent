@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `ctx.proj_dir`, `ctx.task_dir`, `ctx.cur_dir` and `ctx.file_dir`.
 - Add `g:omnipytent_projectRootMarkers` for picking a parent directory as
   project root when there is no tasks file.
+- Async tasks mechanism.
+  - `INPUT_BUFFER` - creates a buffer, and when the user finishes with it -
+    returns the buffer lines and resumes the command.
 
 ### Changed
 - Look the directory tree for a tasks file.

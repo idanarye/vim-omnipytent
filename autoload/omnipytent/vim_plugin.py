@@ -4,6 +4,7 @@ import os
 
 from .tasks_file import TasksFile, get_tasks_file
 from .tasks import invoke_with_dependencies
+from .async_execution import AsyncExecutor
 
 
 def _tasks_file_path():
@@ -17,6 +18,10 @@ def _api_entry_point(command):
             prompt_and_invoke()
         else:
             invoke(*args)
+    elif command == 'resume':
+        executor = AsyncExecutor.get_pending(int(vim.eval('l:executor')))
+        executor.run_next()
+        pass
     elif command == 'edit':
         split_mode = vim.eval('a:splitMode')
         args = vim.eval('a:000')
@@ -38,7 +43,8 @@ def invoke(taskname, *args):
     tasks_file = get_tasks_file()
     tasks_file.load_if_stale()
     task = tasks_file[taskname]
-    invoke_with_dependencies(tasks_file, task, args)
+    executor = AsyncExecutor(invoke_with_dependencies(tasks_file, task, args))
+    executor.run_next()
 
 
 def edit_task(split_mode, taskname):
