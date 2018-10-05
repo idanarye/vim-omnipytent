@@ -84,14 +84,6 @@ function! omnipytent#invoke(pythonVersion, line1, line2, count, ...)
     execute s:apiEntryPointCommand(a:pythonVersion, 'invoke')
 endfunction
 
-function! omnipytent#resume(executor, ...)
-    let l:parts = split(a:executor, ':')
-    let l:pythonVersion = str2nr(l:parts[0])
-    let l:executor = str2nr(l:parts[1])
-
-    execute s:apiEntryPointCommand(l:pythonVersion, 'resume')
-endfunction
-
 function! omnipytent#editTask(pythonVersion, splitMode, ...)
     let l:pythonVersion = a:pythonVersion
     if l:pythonVersion == 0
@@ -213,3 +205,45 @@ function! omnipytent#convertTasksFilePythonVersion()
         throw 'This build of Vim does not support Python plugins'
     endif
 endfunction
+
+let s:YieldedCommandClass = {}
+function! s:YieldedCommandClass.notify(method, ...) dict
+    let l:idx = self.idx
+    let l:method = a:method
+    execute s:apiEntryPointCommand(self.pythonVersion, 'notify')
+    return l:return
+endfunction
+
+function! omnipytent#_yieldedCommand(pythonVersion, idx)
+    let l:obj = copy(s:YieldedCommandClass)
+    let l:obj.pythonVersion = a:pythonVersion
+    let l:obj.idx = a:idx
+    return l:obj
+endfunction
+
+function! omnipytent#_typeMap(value)
+    let l:type = type(a:value)
+    if l:type == type([]) || l:type == type({})
+        let l:type = map(copy(a:value), 'omnipytent#_typeMap(v:val)[1]')
+    endif
+    return [a:value, l:type]
+endfunction
+
+let s:nextFrameCommands = []
+function! omnipytent#_addNextFrameCommand(yieldedCommand, method, args)
+    call add(s:nextFrameCommands, [a:yieldedCommand, a:method, a:args])
+endfunction
+function! omnipytent#_runNextFrameCommands()
+    while !empty(s:nextFrameCommands)
+        let l:tup = remove(s:nextFrameCommands, 0)
+        call call(l:tup[0].notify, [l:tup[1]] + l:tup[2], l:tup[0])
+    endwhile
+endfunction
+
+silent! autocmd! omnipytent
+augroup omnipytent
+    autocmd omnipytent CursorMoved * call omnipytent#_runNextFrameCommands()
+    autocmd omnipytent CursorMovedI * call omnipytent#_runNextFrameCommands()
+    autocmd omnipytent CursorHold * call omnipytent#_runNextFrameCommands()
+    autocmd omnipytent CursorHoldI * call omnipytent#_runNextFrameCommands()
+augroup END

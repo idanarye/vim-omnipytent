@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Look the directory tree for a tasks file.
 
+### Fixed
+- `vim_eval` for lists and dicts.
+
 ## 1.2.0 - 2017-12-19
 ### Added
 - Add the `OPT` helper for easy access to options.

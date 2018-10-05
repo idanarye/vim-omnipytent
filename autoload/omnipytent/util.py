@@ -6,6 +6,9 @@ import re
 
 
 def vim_repr(value):
+    if value is None:
+        return '0'
+
     if isinstance(value, bool):
         return str(int(value))  # 0 or 1
 
@@ -31,7 +34,7 @@ def vim_repr(value):
     if isinstance(value, (str, bytes)):
         return json.dumps(value)
 
-    if isinstance(value, (list, set)):
+    if isinstance(value, (list, set, tuple)):
         return '[%s]' % ', '.join(map(vim_repr, value))
 
     if isinstance(value, dict):
@@ -46,14 +49,27 @@ __number_type = vim.eval('type(0)')
 __float_type = vim.eval('type(0.0)')
 
 
+def __apply_type_map(value, type_map):
+    if type_map == __number_type:
+        return int(value)
+    elif type_map == __float_type:
+        return float(value)
+    elif isinstance(type_map, list):
+        assert isinstance(value, list)
+        assert len(value) == len(type_map)
+        return [__apply_type_map(v, t) for v, t in zip(value, type_map)]
+    elif isinstance(type_map, dict):
+        assert isinstance(value, dict)
+        assert value.keys() == type_map.keys()
+        return {k: __apply_type_map(v, type_map[k]) for k, v in value.items()}
+    else:
+        return value
+
+
 def vim_eval(expr):
     """Like vim.eval, but deals with numbers correctly"""
-    expr_type, expr_value = vim.eval('map([%s], "[type(v:val), v:val]")[0]' % expr)
-    if expr_type == __number_type:
-        expr_value = int(expr_value)
-    elif expr_type == __float_type:
-        expr_value = float(expr_value)
-    return expr_value
+    # expr_type, expr_value = vim.eval('map([%s], "[type(v:val), v:val]")[0]' % expr)
+    return __apply_type_map(*vim.eval('omnipytent#_typeMap(%s)' % (expr,)))
 
 
 def input_list(prompt, options):
