@@ -11,7 +11,7 @@ except ImportError:
 
 from abc import abstractmethod
 
-from .util import vim_repr
+from .util import vim_repr, RawVim
 
 _IDX_COUNTER = count(1)
 
@@ -36,7 +36,7 @@ class AsyncCommand(ABC):
 
     @property
     def vim_obj(self):
-        return 'omnipytent#_yieldedCommand(%s,%s)' % (sys.version_info[0], self.idx)
+        return RawVim.fmt('omnipytent#_yieldedCommand(%s,%s)', sys.version_info[0], self.idx)
 
     def register(self, executor):
         self.executor = executor
@@ -64,9 +64,15 @@ class AsyncCommand(ABC):
 
 
 class INPUT_BUFFER(AsyncCommand):
+    def __init__(self, text=None):
+        if isinstance(text, str):
+            text = text.splitlines()
+        self.text = text
+
     def on_yield(self):
         vim.command('new')
         self.buffer = vim.current.buffer
+        self.buffer[:] = self.text
         vim.command('set buftype=nofile')
         vim.command('autocmd omnipytent BufDelete <buffer> call %s.notify("save_buffer_content")' % self.vim_obj)
 
@@ -76,3 +82,8 @@ class INPUT_BUFFER(AsyncCommand):
 
     def resume_execution(self):
         self.resume(self.content)
+
+
+def CHOOSE(source, multi=False):
+    from omnipytent.integration.fzf import FZF
+    return FZF(source=source, multi=multi)

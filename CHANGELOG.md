@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Async tasks mechanism.
   - `INPUT_BUFFER` - creates a buffer, and when the user finishes with it -
     returns the buffer lines and resumes the command.
+  - `CHOOSE` - runs a fuzzy matcher on the source list
 
 ### Changed
 - Look the directory tree for a tasks file.

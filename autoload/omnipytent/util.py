@@ -5,9 +5,18 @@ import json
 import re
 
 
+class RawVim(str):
+    @classmethod
+    def fmt(cls, fmt, *args):
+        return cls(fmt % args)
+
+
 def vim_repr(value):
     if value is None:
         return '0'
+
+    if isinstance(value, RawVim):
+        return value
 
     if isinstance(value, bool):
         return str(int(value))  # 0 or 1

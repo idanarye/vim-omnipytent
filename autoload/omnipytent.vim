@@ -229,6 +229,10 @@ function! omnipytent#_typeMap(value)
     return [a:value, l:type]
 endfunction
 
+function! omnipytent#_redirectToNotify(...) dict
+    return call(self.yieldedCommand.notify, [self.notifyMethod] + a:000, self.yieldedCommand)
+endfunction
+
 let s:nextFrameCommands = []
 function! omnipytent#_addNextFrameCommand(yieldedCommand, method, args)
     call add(s:nextFrameCommands, [a:yieldedCommand, a:method, a:args])
