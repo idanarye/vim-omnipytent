@@ -84,6 +84,6 @@ class INPUT_BUFFER(AsyncCommand):
         self.resume(self.content)
 
 
-def CHOOSE(source, multi=False):
+def CHOOSE(source, multi=False, prompt=None):
     from omnipytent.integration.fzf import FZF
-    return FZF(source=source, multi=multi)
+    return FZF(source=source, multi=multi, prompt=prompt)
