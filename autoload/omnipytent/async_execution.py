@@ -44,7 +44,7 @@ class AsyncCommand(ABC):
         self.yielded[self.idx] = self
         self.returned_value = None
 
-    def notify(self, method, args):
+    def call(self, method, args):
         return getattr(self, method)(*args)
 
     def resume(self, returned_value=None):
@@ -74,7 +74,7 @@ class INPUT_BUFFER(AsyncCommand):
         self.buffer = vim.current.buffer
         self.buffer[:] = self.text
         vim.command('set buftype=nofile')
-        vim.command('autocmd omnipytent BufDelete <buffer> call %s.notify("save_buffer_content")' % self.vim_obj)
+        vim.command('autocmd omnipytent BufDelete <buffer> call %s.call("save_buffer_content")' % self.vim_obj)
 
     def save_buffer_content(self):
         self.content = self.buffer[:]
@@ -84,6 +84,14 @@ class INPUT_BUFFER(AsyncCommand):
         self.resume(self.content)
 
 
+class FuzzyChooser(AsyncCommand):
+    def __init__(self, source, multi=False, prompt=None):
+        self.source = list(source)
+        self.multi = multi
+        self.prompt = prompt
+
+
 def CHOOSE(source, multi=False, prompt=None):
     from omnipytent.integration.fzf import FZF
+    from omnipytent.integration.unite import UNITE
     return FZF(source=source, multi=multi, prompt=prompt)

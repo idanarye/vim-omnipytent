@@ -3,6 +3,7 @@ import vim
 from contextlib import contextmanager
 import json
 import re
+import os.path
 
 
 class RawVim(str):
@@ -181,3 +182,19 @@ def other_windows(window=None):
         vim.current.window = original_window
         if original_mode == 'n':
             vim.command(r'call feedkeys("\<C-\>\<C-n>")')
+
+
+def load_companion_vim_file(source_file):
+    """
+    Load a companion Vim file with the same name of a Python file.
+
+    For example, from ``foo.py`` call::
+
+        load_companion_vim_file(__name__)
+
+    To load ``foo.vim`` in the same directory.
+    """
+
+    path, ext = os.path.splitext(os.path.abspath(source_file))
+    path += '.vim'
+    vim.command('source ' + path)

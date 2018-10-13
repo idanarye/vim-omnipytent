@@ -1,21 +1,15 @@
 import vim
 
-from omnipytent.async_execution import AsyncCommand
+from omnipytent.async_execution import FuzzyChooser
 from omnipytent.execution import FN, quote
-from omnipytent.util import vim_repr, RawVim
+from omnipytent.util import vim_repr, RawVim, load_companion_vim_file
 
-
-class FZF(AsyncCommand):
-    def __init__(self, source, multi=False, prompt=None):
-        self.source = list(source)
-        self.multi = multi
-        self.prompt = prompt
-
+class FZF(FuzzyChooser):
     def on_yield(self):
         params = {}
         params['source'] = list(map(str, self.source))
 
-        sink = RawVim("function('omnipytent#_redirectToNotify')")
+        sink = RawVim("function('omnipytent#integration#fzf#finish')")
         flags = []
         if self.multi:
             params['sink*'] = sink
@@ -23,7 +17,6 @@ class FZF(AsyncCommand):
         else:
             params['sink'] = sink
         params['yieldedCommand'] = self.vim_obj
-        params['notifyMethod'] = 'choose'
 
         params['down'] = '~40%'
         if self.prompt:
@@ -32,5 +25,8 @@ class FZF(AsyncCommand):
         params['options'] = ' '.join(map(str, flags))
         FN['fzf#run'](params)
 
-    def choose(self, choice):
+    def finish(self, choice):
+        self.run_next_frame('resume_execution', choice)
+
+    def resume_execution(self, choice):
         self.resume(choice)

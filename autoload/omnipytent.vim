@@ -207,10 +207,10 @@ function! omnipytent#convertTasksFilePythonVersion()
 endfunction
 
 let s:YieldedCommandClass = {}
-function! s:YieldedCommandClass.notify(method, ...) dict
+function! s:YieldedCommandClass.call(method, ...) dict
     let l:idx = self.idx
     let l:method = a:method
-    execute s:apiEntryPointCommand(self.pythonVersion, 'notify')
+    execute s:apiEntryPointCommand(self.pythonVersion, 'call')
     return l:return
 endfunction
 
@@ -229,10 +229,6 @@ function! omnipytent#_typeMap(value)
     return [a:value, l:type]
 endfunction
 
-function! omnipytent#_redirectToNotify(...) dict
-    return call(self.yieldedCommand.notify, [self.notifyMethod] + a:000, self.yieldedCommand)
-endfunction
-
 let s:nextFrameCommands = []
 function! omnipytent#_addNextFrameCommand(yieldedCommand, method, args)
     call add(s:nextFrameCommands, [a:yieldedCommand, a:method, a:args])
@@ -240,7 +236,7 @@ endfunction
 function! omnipytent#_runNextFrameCommands()
     while !empty(s:nextFrameCommands)
         let l:tup = remove(s:nextFrameCommands, 0)
-        call call(l:tup[0].notify, [l:tup[1]] + l:tup[2], l:tup[0])
+        call call(l:tup[0].call, [l:tup[1]] + l:tup[2], l:tup[0])
     endwhile
 endfunction
 
