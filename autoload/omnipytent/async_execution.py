@@ -94,4 +94,5 @@ class FuzzyChooser(AsyncCommand):
 def CHOOSE(source, multi=False, prompt=None):
     from omnipytent.integration.fzf import FZF
     from omnipytent.integration.unite import UNITE
+    from omnipytent.integration.ctrlp import CTRLP
     return FZF(source=source, multi=multi, prompt=prompt)
