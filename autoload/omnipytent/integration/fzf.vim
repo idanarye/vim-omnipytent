@@ -1,3 +1,4 @@
 function! omnipytent#integration#fzf#finish(result) dict abort
-    call self.yieldedCommand.call('finish', a:result)
+    let l:indices = map(copy(a:result), 'str2nr(split(v:val)[0])')
+    call self.yieldedCommand.call('finish', l:indices)
 endfunction

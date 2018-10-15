@@ -1,5 +1,5 @@
 let s:uniteKind = {
-            \ 'name': 'omnipytent',
+            \ 'name': 'omnipytent_choice',
             \ 'default_action': 'choose',
             \ 'action_table': {},
             \ }
@@ -10,11 +10,11 @@ let s:uniteKind.action_table.choose = {
 
 function! s:uniteKind.action_table.choose.func(candidates) dict
     if !empty(a:candidates)
-        let l:result = map(copy(a:candidates), 'v:val.word')
+        let l:result = map(copy(a:candidates), 'v:val.idx')
         call a:candidates[0].yieldedCommand.call('set_result', l:result)
     endif
 endfunction
 
-function! unite#kinds#omnipytent#define() abort
+function! unite#kinds#omnipytent_choice#define() abort
     return s:uniteKind
 endfunction

@@ -1,5 +1,5 @@
 let s:uniteSource = {
-            \ 'name': 'omnipytent',
+            \ 'name': 'omnipytent_choice',
             \ 'hooks': {},
             \ }
 
@@ -17,6 +17,6 @@ function! s:uniteSource.hooks.on_close(args, context) abort
     call l:cmd.call('finish')
 endfunction
 
-function! unite#sources#omnipytent#define() abort
+function! unite#sources#omnipytent_choice#define() abort
     return s:uniteSource
 endfunction

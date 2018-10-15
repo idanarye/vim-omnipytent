@@ -9,6 +9,8 @@ call add(g:ctrlp_ext_vars, {
     \ 'init': 'ctrlp#omnipytent#init()',
     \ 'accept': 'ctrlp#omnipytent#accept',
     \ 'type': 'line',
+    \ 'lname': 'omnipytent',
+    \ 'sname': 'omnipytent',
     \ 'opmul': 0,
     \ })
 
@@ -26,10 +28,6 @@ function! ctrlp#omnipytent#accept(mode, str)
     let l:yieldedCommand = s:yieldedCommand
     unlet s:yieldedCommand
     call l:yieldedCommand.call('finish', a:str)
-endfunction
-
-function! ctrlp#omnipytent#remove(entries)
-    throw 'bad bad bad'
 endfunction
 
 let s:id = g:ctrlp_builtins + len(g:ctrlp_ext_vars)

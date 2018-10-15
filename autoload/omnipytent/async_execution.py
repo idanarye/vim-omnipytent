@@ -84,11 +84,27 @@ class INPUT_BUFFER(AsyncCommand):
         self.resume(self.content)
 
 
-class FuzzyChooser(AsyncCommand):
-    def __init__(self, source, multi=False, prompt=None):
+class SelectionUI(AsyncCommand):
+    def __init__(self, source, multi=False, prompt=None, fmt=str):
         self.source = list(source)
         self.multi = multi
         self.prompt = prompt
+        self.fmt = fmt
+
+    @abstractmethod
+    def gen_entry(self, i, item):
+        pass
+
+    def get_source(self):
+        return [self.gen_entry(i, item) for i, item in enumerate(self.source)]
+
+    def finish_indices(self, indices):
+        if self.multi:
+            self.resume([self.source[i] for i in indices])
+        else:
+            # TODO: make this an error if there are more than one
+            index, = indices
+            self.resume(self.source[index])
 
 
 def CHOOSE(source, multi=False, prompt=None):
