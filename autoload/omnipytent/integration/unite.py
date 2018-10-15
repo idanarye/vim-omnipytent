@@ -1,5 +1,4 @@
 import vim
-import os
 
 from omnipytent.async_execution import FuzzyChooser
 from omnipytent.execution import FN
