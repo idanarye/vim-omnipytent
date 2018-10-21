@@ -82,7 +82,7 @@ def vim_eval(expr):
     return __apply_type_map(*vim.eval('omnipytent#_typeMap(%s)' % (expr,)))
 
 
-def input_list(prompt, options):
+def input_list(prompt, options, fmt=str):
     take_from = 0
     while take_from < len(options):
         take_this_time = int(vim.eval('&lines')) - 2
@@ -107,7 +107,7 @@ def input_list(prompt, options):
                 index_text = str(index + 1)
                 yield '%s)%s %s' % (index_text,
                                     ' ' * (number_length - len(index_text)),
-                                    option)
+                                    fmt(option))
         list_for_input_query = list(list_for_input_query_generator())
         chosen_option_number = int(vim.eval("inputlist(%s)" % vim_repr(list_for_input_query)))
 

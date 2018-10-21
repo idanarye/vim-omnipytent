@@ -12,7 +12,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Async tasks mechanism.
   - `INPUT_BUFFER` - creates a buffer, and when the user finishes with it -
     returns the buffer lines and resumes the command.
-  - `CHOOSE` - runs a fuzzy matcher on the source list
+  - `CHOOSE` - runs a chooser UI on the source list. Supports
+    [FZF](https://github.com/junegunn/fzf),
+    [Unite](https://github.com/Shougo/unite.vim),
+    [Denite](https://github.com/Shougo/denite.nvim) and
+    [CtrlP](https://github.com/ctrlpvim/ctrlp.vim). Reverts to `inputlist` if
+    none is available.
 
 ### Changed
 - Look the directory tree for a tasks file.

@@ -1,6 +1,7 @@
 from itertools import count
 import vim
 import sys
+import importlib
 
 try:
     from abc import ABC
@@ -11,9 +12,13 @@ except ImportError:
 
 from abc import abstractmethod
 
-from .util import vim_repr, RawVim
+from .util import vim_repr, RawVim, input_list
 
 _IDX_COUNTER = count(1)
+
+
+class AbortAsyncCommand(Exception):
+    pass
 
 
 class AsyncExecutor(object):
@@ -22,13 +27,21 @@ class AsyncExecutor(object):
         self.yielded_command = None
 
     def run_next(self):
-        try:
-            self.yielded_command = next(self.invocation_generator)
-        except StopIteration:
-            pass
-        else:
-            self.yielded_command.register(self)
-            self.yielded_command.on_yield()
+        while True:
+            try:
+                self.yielded_command = next(self.invocation_generator)
+            except StopIteration:
+                pass
+            else:
+                self.yielded_command._register(self)
+                try:
+                    self.yielded_command._running_from_async_executor = True
+                    self.yielded_command.on_yield()
+                    self.yielded_command._running_from_async_executor = False
+                except AbortAsyncCommand:
+                    self.yielded_command._unregister()
+                    continue
+            break
 
 
 class AsyncCommand(ABC):
@@ -38,19 +51,25 @@ class AsyncCommand(ABC):
     def vim_obj(self):
         return RawVim.fmt('omnipytent#_yieldedCommand(%s,%s)', sys.version_info[0], self.idx)
 
-    def register(self, executor):
+    def _register(self, executor):
         self.executor = executor
         self.idx = next(_IDX_COUNTER)
         self.yielded[self.idx] = self
-        self.returned_value = None
+        self._returned_value = None
+
+    def _unregister(self):
+        del self.yielded[self.idx]
 
     def call(self, method, args):
         return getattr(self, method)(*args)
 
     def resume(self, returned_value=None):
-        del self.yielded[self.idx]
-        self.returned_value = returned_value
-        self.executor.run_next()
+        self._returned_value = returned_value
+        if self._running_from_async_executor:
+            raise AbortAsyncCommand
+        else:
+            self._unregister()
+            self.executor.run_next()
 
     def run_next_frame(self, method, *args):
         vim.command('call omnipytent#_addNextFrameCommand(%s, %s, %s)' % (
@@ -107,9 +126,50 @@ class SelectionUI(AsyncCommand):
             self.resume(self.source[index])
 
 
-def CHOOSE(source, multi=False, prompt=None):
-    from omnipytent.integration.fzf import FZF
-    from omnipytent.integration.denite import DENITE
-    from omnipytent.integration.unite import UNITE
-    from omnipytent.integration.ctrlp import CTRLP
-    return FZF(source=source, multi=multi, prompt=prompt)
+class InputListSelectionUI(SelectionUI):
+    def gen_entry(self, i, item):
+        pass
+
+    def on_yield(self):
+        self.resume(input_list(self.prompt or 'Choose:', self.source, self.fmt))
+
+
+def __selection_ui():
+    if '1' == vim.eval('exists("*fzf#run")'):
+        return 'fzf'
+    elif '2' == vim.eval('exists(":Denite")'):
+        return 'denite'
+    elif '2' == vim.eval('exists(":Unite")'):
+        return 'unite'
+    elif '2' == vim.eval('exists(":CtrlP")'):
+        return 'ctrlp'
+    else:
+        return 'inputlist'
+
+
+def __selection_ui_cls(selection_ui):
+    if selection_ui == 'fzf':
+        from omnipytent.integration.fzf import FZF
+        return FZF
+    elif selection_ui == 'denite':
+        from omnipytent.integration.denite import DENITE
+        return DENITE
+    elif selection_ui == 'unite':
+        from omnipytent.integration.unite import UNITE
+        return UNITE
+    elif selection_ui == 'ctrlp':
+        from omnipytent.integration.ctrlp import CTRLP
+        return CTRLP
+    elif selection_ui == 'inputlist':
+        return InputListSelectionUI
+    else:
+        module_name, class_name = selection_ui.rsplit('.', 1)
+        return getattr(importlib.import_module(module_name), class_name)
+
+
+def CHOOSE(source, multi=False, prompt=None, fmt=str):
+    selection_ui = vim.vars.get('omnipytent_selectionUI') or __selection_ui()
+    selection_ui_cls = __selection_ui_cls(selection_ui)
+
+    return selection_ui_cls(source=source, multi=multi, prompt=prompt, fmt=fmt)
+

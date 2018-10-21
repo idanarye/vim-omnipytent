@@ -26,7 +26,7 @@ class Task(object):
                 yielded = next(result)
                 while True:
                     yield yielded
-                    yielded = result.send(yielded.returned_value)
+                    yielded = result.send(yielded._returned_value)
             except StopIteration:
                 pass
 
