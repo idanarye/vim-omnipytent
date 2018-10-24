@@ -439,6 +439,19 @@ The "omnipytent" module exposes some async commands:
                                                            *omnipytent-CHOOSE*
 * "CHOOSE" Uses a selection UI to choose from the specified options.
 
+To support nesting in Python 2, yielding a generator is equivalent to yielding
+*from* a generator: >
+    @task
+    def foo(ctx):
+        # This:
+        yield bar()
+        # Is the same as this:
+        yield from bar()
+
+    def bar():
+        result = yield SOME_ASYNC_COMMAND
+        use_async_command_result(result)
+<
 CREATING ASYNC COMMANDS                     *omnipytent-creating-AsyncCommand*
 
 The basic async command subclasses "AsyncCommand" and implements "on_yield": >

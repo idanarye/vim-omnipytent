@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import json
 import re
 import os.path
+import inspect
 
 
 class RawVim(str):
@@ -198,3 +199,23 @@ def load_companion_vim_file(source_file):
     path, ext = os.path.splitext(os.path.abspath(source_file))
     path += '.vim'
     vim.command('source ' + path)
+
+
+def flatten_iterator(it):
+    try:
+        item = next(it)
+        while True:
+            if inspect.isgenerator(item):
+                item = flatten_iterator(item)
+                try:
+                    subitem = next(item)
+                    while True:
+                        send = yield subitem
+                        subitem = item.send(send)
+                except StopIteration:
+                    pass
+            else:
+                send = yield item
+            item = it.send(send)
+    except StopIteration:
+        pass

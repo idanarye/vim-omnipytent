@@ -4,7 +4,7 @@ import vim
 
 from .context import InvocationContext
 from .hacks import function_locals
-from .util import input_list, other_windows
+from .util import input_list, other_windows, flatten_iterator
 
 
 class Task(object):
@@ -22,6 +22,7 @@ class Task(object):
     def _run_func_as_generator(self, *args, **kwargs):
         result = self.func(*args, **kwargs)
         if inspect.isgenerator(result):
+            result = flatten_iterator(result)
             try:
                 yielded = next(result)
                 while True:
