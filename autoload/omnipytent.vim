@@ -233,7 +233,7 @@ let s:nextFrameCommands = []
 function! omnipytent#_addNextFrameCommand(yieldedCommand, method, args)
     call add(s:nextFrameCommands, [a:yieldedCommand, a:method, a:args])
 endfunction
-function! omnipytent#_runNextFrameCommands()
+function! omnipytent#_runNextFrameCommands(...)
     while !empty(s:nextFrameCommands)
         let l:tup = remove(s:nextFrameCommands, 0)
         call call(l:tup[0].call, [l:tup[1]] + l:tup[2], l:tup[0])
@@ -241,9 +241,19 @@ function! omnipytent#_runNextFrameCommands()
 endfunction
 
 silent! autocmd! omnipytent
-augroup omnipytent
-    autocmd omnipytent CursorMoved * call omnipytent#_runNextFrameCommands()
-    autocmd omnipytent CursorMovedI * call omnipytent#_runNextFrameCommands()
-    autocmd omnipytent CursorHold * call omnipytent#_runNextFrameCommands()
-    autocmd omnipytent CursorHoldI * call omnipytent#_runNextFrameCommands()
-augroup END
+
+if exists('*timer_start')
+    try
+        call timer_stop(s:timer)
+        unlet s:timer
+    catch
+    endtry
+    let s:timer = timer_start(0, function('omnipytent#_runNextFrameCommands'), {'repeat': -1})
+else
+    augroup omnipytent
+        autocmd omnipytent CursorMoved * call omnipytent#_runNextFrameCommands()
+        autocmd omnipytent CursorMovedI * call omnipytent#_runNextFrameCommands()
+        autocmd omnipytent CursorHold * call omnipytent#_runNextFrameCommands()
+        autocmd omnipytent CursorHoldI * call omnipytent#_runNextFrameCommands()
+    augroup END
+endif
