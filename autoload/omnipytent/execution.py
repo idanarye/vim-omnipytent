@@ -3,7 +3,7 @@ import vim
 from itertools import chain
 from contextlib import contextmanager
 
-from .util import vim_repr, vim_eval
+from .util import vim_repr, vim_eval, RawVim
 
 if vim.eval('has("win32")'):
     from subprocess import list2cmdline
@@ -51,6 +51,9 @@ class VimFunction(object):
     def __call__(self, *args):
         func_expr = '%s(%s)' % (self._function, ', '.join(map(vim_repr, args)))
         return vim_eval(func_expr)
+
+    def _to_raw_vim_(self):
+        return RawVim.fmt('function(%s)' % vim_repr(self._function))
 
 
 @__singleton

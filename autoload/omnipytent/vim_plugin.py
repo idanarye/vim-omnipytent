@@ -19,12 +19,19 @@ def _api_entry_point(command):
             prompt_and_invoke()
         else:
             invoke(*args)
-    elif command == 'call':
+    elif command == 'call' or command == 'try_call':
         idx = int(vim.eval('l:idx'))
         method = vim.eval('l:method')
         args = vim_eval('a:000')
-        command = AsyncCommand.yielded[idx]
-        result = command.call(method, args)
+        try:
+            command = AsyncCommand.yielded[idx]
+        except KeyError:
+            if command == 'try_call':
+                result = 0
+            else:
+                raise
+        else:
+            result = command.call(method, args)
         vim.command('let l:return = %s' % vim_repr(result))
     elif command == 'edit':
         split_mode = vim.eval('a:splitMode')

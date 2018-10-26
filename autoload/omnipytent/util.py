@@ -20,6 +20,9 @@ def vim_repr(value):
     if isinstance(value, RawVim):
         return value
 
+    if hasattr(value, '_to_raw_vim_'):
+        return value._to_raw_vim_()
+
     if isinstance(value, bool):
         return str(int(value))  # 0 or 1
 

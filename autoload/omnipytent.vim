@@ -213,6 +213,12 @@ function! s:YieldedCommandClass.call(method, ...) dict
     execute s:apiEntryPointCommand(self.pythonVersion, 'call')
     return l:return
 endfunction
+function! s:YieldedCommandClass.tryCall(method, ...) dict
+    let l:idx = self.idx
+    let l:method = a:method
+    execute s:apiEntryPointCommand(self.pythonVersion, 'try_call')
+    return l:return
+endfunction
 
 function! omnipytent#_yieldedCommand(pythonVersion, idx)
     let l:obj = copy(s:YieldedCommandClass)
@@ -236,7 +242,7 @@ endfunction
 function! omnipytent#_runNextFrameCommands(...)
     while !empty(s:nextFrameCommands)
         let l:tup = remove(s:nextFrameCommands, 0)
-        call call(l:tup[0].call, [l:tup[1]] + l:tup[2], l:tup[0])
+        call call(l:tup[0].tryCall, [l:tup[1]] + l:tup[2], l:tup[0])
     endwhile
 endfunction
 
@@ -257,3 +263,28 @@ else
         autocmd omnipytent CursorHoldI * call omnipytent#_runNextFrameCommands()
     augroup END
 endif
+
+let s:yieldedCommandForJobs = {}
+
+function! omnipytent#_registerYieldedCommandForJob(jobId, yieldedCommand) abort
+    let s:yieldedCommandForJobs[a:jobId] = a:yieldedCommand
+endfunction
+
+function! omnipytent#_unregisterYieldedCommandForJob(jobId) abort
+    call remove(s:yieldedCommandForJobs, a:jobId)
+endfunction
+
+function! omnipytent#_nvimTerminalCallback(jobId, data, event) dict abort
+    let l:yieldedCommand = get(s:yieldedCommandForJobs, a:jobId)
+    if empty(l:yieldedCommand)
+        return
+    endif
+    if a:event == 'stdout'
+        echo l:yieldedCommand.tryCall('handle_text_output', 'stdout', a:data)
+    elseif a:event == 'stderr'
+        call l:yieldedCommand.tryCall('handle_text_output', 'stderr', a:data)
+    else
+        call l:yieldedCommand.tryCall('handle_exit')
+        call omnipytent#_unregisterYieldedCommandForJob(a:jobId)
+    endif
+endfunction
