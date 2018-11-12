@@ -12,6 +12,7 @@ except ImportError:
 
 from abc import abstractmethod
 
+from .execution import FN, VAR
 from .util import vim_repr, RawVim, input_list
 
 _IDX_COUNTER = count(1)
@@ -83,16 +84,35 @@ class AsyncCommand(ABC):
 
 
 class INPUT_BUFFER(AsyncCommand):
-    def __init__(self, text=None):
+    def __init__(self,
+                 text=None,
+                 name=None,
+                 filetype=None,
+                 init=None):
         if isinstance(text, str):
             text = text.splitlines()
         self.text = text
+        self.name = name
+        self.filetype = filetype
+        self.init = init
 
     def on_yield(self):
-        vim.command('new')
+        vim.command('belowright 10new')
         self.buffer = vim.current.buffer
         self.buffer[:] = self.text
         vim.command('set buftype=nofile')
+        if self.name:
+            vim.command('file %s' % FN.fnameescape(self.name))
+        if self.filetype:
+            VAR['&filetype'] = self.filetype
+        if not self.init:
+            pass
+        elif callable(self.init):
+            self.init()
+        elif isinstance(self.init, str):
+            vim.command(self.init)
+        else:  # assume self.init is a list of strings
+            vim.command('\n'.join(self.init))
         vim.command('autocmd omnipytent BufDelete <buffer> call %s.call("save_buffer_content")' % self.vim_obj)
 
     def save_buffer_content(self):

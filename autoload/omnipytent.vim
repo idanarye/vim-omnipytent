@@ -247,6 +247,8 @@ function! omnipytent#_runNextFrameCommands(...)
 endfunction
 
 silent! autocmd! omnipytent
+augroup omnipytent
+augroup END
 
 if exists('*timer_start')
     try

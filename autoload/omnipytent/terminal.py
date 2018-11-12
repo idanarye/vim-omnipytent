@@ -62,9 +62,6 @@ class Terminal(ShellCommandExecuter):
     def wait_for_prompt_regex(self, target, channels={'stdout', 'stderr'}):
         return TerminalWaitForOutputCommand(self, re.compile(target), allow_partial=True, channels=channels)
 
-    def wait_for_line(self, target, channels={'stdout', 'stderr'}):
-        return TerminalWaitForOutputCommand(self, target, allow_partial=True, channels=channels)
-
 
 class TerminalYieldedCommand(AsyncCommand):
     def __init__(self, terminal):
