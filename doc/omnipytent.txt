@@ -321,7 +321,21 @@ exposes some helpers to make it easier:
   * Use "TERMINAL_PANEL.vert to create a vertical panel instead.
 
   * "TERMINAL_TAB" and "TERMINAL_PANEL" return a shell executor that can be
-    used to send commands to the opened terminal(it it accepts commands)
+    used to send commands to the opened terminal(it it accepts commands).
+    That shell executor also supports the following methods:
+    * ".send_raw":        Send raw text to the terminal
+    * The "<<" operator:  Same as ".send_raw"
+    * ".wait_for_prompt": Create an async command (|omnipytent-async-commands|)
+                          that returns resumes once a line that contains the
+                          text of the first argument ("target") is written.
+                          * If "target" is "re.Pattern", it will be matched
+                            against that line. Alternatively, use the
+                            ".wait_for_prompt_regex" variant to automatically
+                            convert a string to a regex.
+                          * If "target" is callable, it will be used as a
+                            predicate on that line.
+                          * An additional argument, "channels", can limit the
+                            line for just stdin or just stdout.
 
 All these act as functions that receive the shell command and it's arguments
 ad Python function parameters: >
@@ -435,9 +449,20 @@ The "omnipytent" module exposes some async commands:
 
                                                      *omnipytent-INPUT_BUFFER*
 * "INPUT_BUFFER" opens a buffer. Returns when the user closes the buffer, with
-  the text written there.
+  the text written there. Accepts the following arguments:
+  * "text":     Initial text of the input buffer.
+  * "name":     A name for the buffer.
+  * "filetype": The filetype of the buffer.
+  * "init":     If callable - will be called after the buffer's creation.
+                If string - will be invoked as a Vim command.
                                                            *omnipytent-CHOOSE*
-* "CHOOSE" Uses a selection UI to choose from the specified options.
+* "CHOOSE" Uses a selection UI to choose from the specified options. Accepts
+  the following arguments:
+  * "source": Mandatory. The list of options to pick from.
+  * "multi":  If True, return a list of selected items. Not supported by all
+              selection UIs.
+  * "prompt": The prompt for the selection UI.
+  * "fmt":    Format function for displaying each option.
 
 To support nesting in Python 2, yielding a generator is equivalent to yielding
 *from* a generator: >

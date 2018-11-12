@@ -111,8 +111,8 @@ class INPUT_BUFFER(AsyncCommand):
             self.init()
         elif isinstance(self.init, str):
             vim.command(self.init)
-        else:  # assume self.init is a list of strings
-            vim.command('\n'.join(self.init))
+        else:
+            raise TypeError('Expected `init` to be callable or string - not %s' % (type(self.init)),)
         vim.command('autocmd omnipytent BufDelete <buffer> call %s.call("save_buffer_content")' % self.vim_obj)
 
     def save_buffer_content(self):
