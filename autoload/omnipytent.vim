@@ -256,7 +256,7 @@ if exists('*timer_start')
         unlet s:timer
     catch
     endtry
-    let s:timer = timer_start(0, function('omnipytent#_runNextFrameCommands'), {'repeat': -1})
+    let s:timer = timer_start(1, function('omnipytent#_runNextFrameCommands'), {'repeat': -1})
 else
     augroup omnipytent
         autocmd omnipytent CursorMoved * call omnipytent#_runNextFrameCommands()

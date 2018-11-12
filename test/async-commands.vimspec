@@ -1,0 +1,21 @@
+Describe Async Commands
+    Before each
+        call PrepareForTest()
+    End
+
+    It Input Buffer
+        CreateTasksfile
+        @task
+        def read_stuff_from_input_buffer(ctx):
+            buf = vim.current.buffer
+            buf.vars['foo'], = yield INPUT_BUFFER(filetype='bar', init='let b:foo = "baz"')
+.
+
+        OP read_stuff_from_input_buffer
+        call setline(1, 'qux')
+        Assert Equals(b:foo, 'baz')
+        close
+        Wait exists('b:foo')
+        Assert Equals(b:foo, 'qux')
+    End
+End

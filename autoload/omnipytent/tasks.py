@@ -75,6 +75,7 @@ class OptionsTask(Task):
             return []
 
     def invoke(self, ctx, *args):
+        from .async_execution import CHOOSE
         if False:
             yield  # force this into a genrator
         ctx = ctx.for_task(self)
@@ -82,8 +83,6 @@ class OptionsTask(Task):
             options = function_locals(self.func)
         else:
             options = function_locals(self.func, ctx)
-
-        # options = {k: v for k, v in options.items() if self.__varname_filter(k)}
 
         if 0 == len(args) or not ctx.is_main:
             if ctx.is_main:
@@ -98,7 +97,10 @@ class OptionsTask(Task):
                 elif 1 == len(options):
                     ctx.pass_data(next(iter(options.values())))
                     return
-                chosen_item = input_list('Choose %s' % self, options_keys)
+                # chosen_item = yield CHOOSE(options_keys, prompt='Choose %s' % self)
+                async_cmd = CHOOSE(options_keys)
+                yield async_cmd
+                chosen_item = async_cmd._returned_value
                 if chosen_item:
                     ctx.cache.chosen_item = chosen_item
 

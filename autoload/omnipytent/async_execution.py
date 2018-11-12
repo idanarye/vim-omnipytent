@@ -86,13 +86,11 @@ class AsyncCommand(ABC):
 class INPUT_BUFFER(AsyncCommand):
     def __init__(self,
                  text=None,
-                 name=None,
                  filetype=None,
                  init=None):
         if isinstance(text, str):
             text = text.splitlines()
         self.text = text
-        self.name = name
         self.filetype = filetype
         self.init = init
 
@@ -101,8 +99,6 @@ class INPUT_BUFFER(AsyncCommand):
         self.buffer = vim.current.buffer
         self.buffer[:] = self.text
         vim.command('set buftype=nofile')
-        if self.name:
-            vim.command('file %s' % FN.fnameescape(self.name))
         if self.filetype:
             VAR['&filetype'] = self.filetype
         if not self.init:

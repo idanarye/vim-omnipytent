@@ -451,7 +451,6 @@ The "omnipytent" module exposes some async commands:
 * "INPUT_BUFFER" opens a buffer. Returns when the user closes the buffer, with
   the text written there. Accepts the following arguments:
   * "text":     Initial text of the input buffer.
-  * "name":     A name for the buffer.
   * "filetype": The filetype of the buffer.
   * "init":     If callable - will be called after the buffer's creation.
                 If string - will be invoked as a Vim command.
