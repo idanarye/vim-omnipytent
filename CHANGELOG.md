@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     [CtrlP](https://github.com/ctrlpvim/ctrlp.vim). Reverts to `inputlist` if
     none is available.
     - FZF, Unite and Denite support multiple choices and selection preview.
+- `@task.options_multi` - like `task.options` but allows multiple choices.
 
 ### Changed
 - Look the directory tree for a tasks file.

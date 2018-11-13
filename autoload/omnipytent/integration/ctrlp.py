@@ -12,4 +12,6 @@ class CTRLP(SelectionUI):
         return item
 
     def finish(self, choice):
+        if self.multi:
+            choice = [choice]
         self.resume(choice)

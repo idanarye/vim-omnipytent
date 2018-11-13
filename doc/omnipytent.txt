@@ -719,6 +719,8 @@ An *omnipytent-completion-context-object* "ctx" contains:
 * "ctx.arg_name"    The name of the completed task argument.
 * "ctx.arg_prefix"  The part of the completed task argument that the user
                     already typed.
+* "ctx.prev_args"   The list of arguments before the one currently being
+                    completed.
 * "ctx.cmd_line"    The entire command line.
 * "ctx.cursor_pos"  The cursor position in the command line.
 * "ctx.task"        The task object.

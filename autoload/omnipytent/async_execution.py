@@ -159,7 +159,10 @@ class InputListSelectionUI(SelectionUI):
         pass
 
     def on_yield(self):
-        self.resume(input_list(self.prompt or 'Choose:', self.source, self.fmt))
+        choice = input_list(self.prompt or 'Choose:', self.source, self.fmt)
+        if self.multi:
+            choice = [choice]
+        self.resume(choice)
 
 
 def __selection_ui():

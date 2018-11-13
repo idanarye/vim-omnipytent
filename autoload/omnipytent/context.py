@@ -98,19 +98,22 @@ class CompletionContext:
             return cls(task=None,
                        arg_index=None,
                        arg_prefix=parts[1],
+                       prev_args=[],
                        cmd_line=cmd_line,
                        cursor_pos=cursor_pos)
         else:
             return cls(task=tasks_file[parts[1]],
                        arg_index=len(parts) - 3,
                        arg_prefix=parts[-1],
+                       prev_args=parts[2:-1],
                        cmd_line=cmd_line,
                        cursor_pos=cursor_pos)
 
-    def __init__(self, task, arg_index, arg_prefix, cmd_line, cursor_pos):
+    def __init__(self, task, arg_index, arg_prefix, prev_args, cmd_line, cursor_pos):
         self.task = task
         self.arg_index = arg_index
         self.arg_prefix = arg_prefix
+        self.prev_args = prev_args
         self.cmd_line = cmd_line
         self.cursor_pos = cursor_pos
 
