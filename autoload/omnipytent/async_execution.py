@@ -120,11 +120,12 @@ class INPUT_BUFFER(AsyncCommand):
 
 
 class SelectionUI(AsyncCommand):
-    def __init__(self, source, multi=False, prompt=None, fmt=str):
+    def __init__(self, source, multi=False, prompt=None, fmt=str, preview=None):
         self.source = list(source)
         self.multi = multi
         self.prompt = prompt
         self.fmt = fmt
+        self.preview = preview
 
     @abstractmethod
     def gen_entry(self, i, item):
@@ -140,6 +141,17 @@ class SelectionUI(AsyncCommand):
             # TODO: make this an error if there are more than one
             index, = indices
             self.resume(self.source[index])
+
+    def _bytes_for_preview(self, index):
+        try:
+            index = int(index)
+            item = self.source[index]
+            preview = self.preview(item)
+            if not isinstance(preview, bytes):
+                preview = str(preview).encode('utf8')
+            return preview
+        except Exception as e:
+            return ("Got exception:\n%s" % (e,)).encode('utf8')
 
 
 class InputListSelectionUI(SelectionUI):
@@ -183,9 +195,9 @@ def __selection_ui_cls(selection_ui):
         return getattr(importlib.import_module(module_name), class_name)
 
 
-def CHOOSE(source, multi=False, prompt=None, fmt=str):
+def CHOOSE(source, multi=False, prompt=None, fmt=str, preview=None):
     selection_ui = vim.vars.get('omnipytent_selectionUI') or __selection_ui()
     selection_ui_cls = __selection_ui_cls(selection_ui)
 
-    return selection_ui_cls(source=source, multi=multi, prompt=prompt, fmt=fmt)
+    return selection_ui_cls(source=source, multi=multi, prompt=prompt, fmt=fmt, preview=preview)
 

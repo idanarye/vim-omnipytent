@@ -8,6 +8,8 @@ from .util import input_list, other_windows, flatten_iterator
 
 
 class Task(object):
+    from .context import TaskContext
+
     def __init__(self, func):
         self.func = func
 
@@ -56,6 +58,12 @@ class Task(object):
 
 
 class OptionsTask(Task):
+    class TaskContext(Task.TaskContext):
+        _preview = None
+
+        def preview(self, preview):
+            self._preview = preview
+
     def __init__(self, func):
         super(OptionsTask, self).__init__(func)
 
@@ -98,7 +106,12 @@ class OptionsTask(Task):
                     ctx.pass_data(next(iter(options.values())))
                     return
                 # chosen_item = yield CHOOSE(options_keys, prompt='Choose %s' % self)
-                async_cmd = CHOOSE(options_keys)
+                if ctx._preview:
+                    def preview(key):
+                        return ctx._preview(options[key])
+                else:
+                    preview = None
+                async_cmd = CHOOSE(options_keys, preview=preview)
                 yield async_cmd
                 chosen_item = async_cmd._returned_value
                 if chosen_item:

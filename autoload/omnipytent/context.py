@@ -14,7 +14,7 @@ class InvocationContext(object):
         self.start_buffer = vim.current.buffer
 
     def for_task(self, task):
-        return TaskContext(self, task)
+        return task.TaskContext(self, task)
 
 
 class TaskContext(object):

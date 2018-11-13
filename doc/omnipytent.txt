@@ -455,11 +455,13 @@ The "omnipytent" module exposes some async commands:
                                                            *omnipytent-CHOOSE*
 * "CHOOSE" Uses a selection UI to choose from the specified options. Accepts
   the following arguments:
-  * "source": Mandatory. The list of options to pick from.
-  * "multi":  If True, return a list of selected items. Not supported by all
-              selection UIs.
-  * "prompt": The prompt for the selection UI.
-  * "fmt":    Format function for displaying each option.
+  * "source":  Mandatory. The list of options to pick from.
+  * "multi":   If True, return a list of selected items. Only supported in FZF,
+               Unite and Denite.
+  * "prompt":  The prompt for the selection UI.
+  * "fmt":     Format function for displaying each option.
+  * "preview": Preview function for generating item preview. Only supported in
+               FZF, Unite and Denite.
 
 To support nesting in Python 2, yielding a generator is equivalent to yielding
 *from* a generator: >
@@ -604,6 +606,31 @@ Example: >
 You can invoke the options task directly to force a re-prompt, or you can
 invoke it with the desired option's caption as argument to set it(there is
 autocompletion for the option argument)
+
+                                                  *omnipytent-options-preview*
+If your selection UI suppors previewing, you can use the "preview" method of
+the options task's context to set a preview function. Example: >
+    @task.options
+    def animal(ctx):
+        @ctx.preview
+        def _preview(animal):
+            import json
+            return '\n'.join('%s:\t%s' % (k, v) for k, v in animal.items())
+
+        dog = dict(
+            legs=4,
+            sound='bark')
+
+        cat = dict(
+            legs=4,
+            sound='purr')
+
+        snake = dict(
+            legs=0,
+            sound='hiss')
+<
+A preview-supporting selection UI will then display each animal's attributes in
+it's preview area.
 
 WINDOW TASK                                           *omnipytent-window-task*
 

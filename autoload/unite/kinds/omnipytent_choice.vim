@@ -18,3 +18,12 @@ endfunction
 function! unite#kinds#omnipytent_choice#define() abort
     return s:uniteKind
 endfunction
+
+let s:uniteKind.action_table.preview = {
+      \ 'description' : 'preview omnipytent choice',
+      \ 'is_quit' : 0,
+      \ }
+function! s:uniteKind.action_table.preview.func(candidate) abort dict "{{{
+  let l:previewFile = a:candidate.yieldedCommand.call('create_preview_file', a:candidate.idx)
+  call unite#view#_preview_file(l:previewFile)
+endfunction
