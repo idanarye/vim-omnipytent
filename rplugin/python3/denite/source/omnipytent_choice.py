@@ -3,7 +3,7 @@ from .base import Base
 
 class Source(Base):
     def __init__(self, vim):
-        super().__init__(vim)
+        super(Source, self).__init__(vim)
         self.name = 'omnipytent-choice'
         self.kind = 'omnipytent-choice'
 

@@ -334,8 +334,6 @@ exposes some helpers to make it easier:
                             convert a string to a regex.
                           * If "target" is callable, it will be used as a
                             predicate on that line.
-                          * An additional argument, "channels", can limit the
-                            line for just stdin or just stdout.
 
 All these act as functions that receive the shell command and it's arguments
 ad Python function parameters: >

@@ -268,12 +268,38 @@ endif
 
 let s:yieldedCommandForJobs = {}
 
+if has('nvim')
+    function! s:termToJob(term) abort
+        return a:term
+    endfunction
+else
+    function! s:termToJob(term) abort
+        return job_getchannel(term_getjob(a:term))
+    endfunction
+endif
+
 function! omnipytent#_registerYieldedCommandForJob(jobId, yieldedCommand) abort
-    let s:yieldedCommandForJobs[a:jobId] = a:yieldedCommand
+    let s:yieldedCommandForJobs[s:termToJob(a:jobId)] = a:yieldedCommand
 endfunction
 
 function! omnipytent#_unregisterYieldedCommandForJob(jobId) abort
-    call remove(s:yieldedCommandForJobs, a:jobId)
+    call remove(s:yieldedCommandForJobs, s:termToJob(a:jobId))
+endfunction
+
+function! omnipytent#_vimTerminalChannelCallback(channel, msg) abort
+    let l:yieldedCommand = get(s:yieldedCommandForJobs, a:channel)
+    if empty(l:yieldedCommand)
+        return
+    endif
+    call l:yieldedCommand.tryCall('handle_text_output', split(a:msg, "\10"))
+endfunction
+
+function! omnipytent#_vimTerminalExitCallback(channel, status) abort
+    let l:yieldedCommand = get(s:yieldedCommandForJobs, a:channel)
+    if empty(l:yieldedCommand)
+        return
+    endif
+    call l:yieldedCommand.tryCall('handle_text_output', split(a:msg, "\10"))
 endfunction
 
 function! omnipytent#_nvimTerminalCallback(jobId, data, event) dict abort
@@ -282,9 +308,9 @@ function! omnipytent#_nvimTerminalCallback(jobId, data, event) dict abort
         return
     endif
     if a:event == 'stdout'
-        echo l:yieldedCommand.tryCall('handle_text_output', 'stdout', a:data)
+        call l:yieldedCommand.tryCall('handle_text_output', a:data)
     elseif a:event == 'stderr'
-        call l:yieldedCommand.tryCall('handle_text_output', 'stderr', a:data)
+        call l:yieldedCommand.tryCall('handle_text_output', a:data)
     else
         call l:yieldedCommand.tryCall('handle_exit')
         call omnipytent#_unregisterYieldedCommandForJob(a:jobId)

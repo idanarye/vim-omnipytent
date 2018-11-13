@@ -14,7 +14,13 @@ class Terminal(ShellCommandExecuter):
     if bool(int(vim.eval('exists("*term_start")'))):  # Vim 8
         @staticmethod
         def __start(command):
-            job_id = FN.term_start(command, dict(curwin=1))
+            callback = FN['omnipytent#_vimTerminalChannelCallback']
+            job_id = FN.term_start(command, dict(
+                curwin=1,
+                out_cb=callback,
+                err_cb=callback,
+                exit_cb=FN['omnipytent#_vimTerminalExitCallback'],
+            ))
             return job_id
 
         def write(self, text):
@@ -56,56 +62,51 @@ class Terminal(ShellCommandExecuter):
         def start(cls, command):
             return cls(cls.__start(command), vim.current.buffer)
 
-    def wait_for_prompt(self, target, channels={'stdout', 'stderr'}):
-        return TerminalWaitForOutputCommand(self, target, allow_partial=True, channels=channels)
+    def wait_for_prompt(self, target):
+        return TerminalWaitForOutputCommand(self, target, allow_partial=True)
 
-    def wait_for_prompt_regex(self, target, channels={'stdout', 'stderr'}):
-        return TerminalWaitForOutputCommand(self, re.compile(target), allow_partial=True, channels=channels)
+    def wait_for_prompt_regex(self, target):
+        return TerminalWaitForOutputCommand(self, re.compile(target), allow_partial=True)
 
 
 class TerminalYieldedCommand(AsyncCommand):
     def __init__(self, terminal):
         self.terminal = terminal
-        self.buffers = dict(stderr=[], stdout=[])
+        self.buffer = []
 
     def on_yield(self):
         FN['omnipytent#_registerYieldedCommandForJob'](self.terminal.job_id, self.vim_obj)
 
     def resume(self, returned_value=None):
         FN['omnipytent#_unregisterYieldedCommandForJob'](self.terminal.job_id)
-        super().resume(returned_value=returned_value)
+        super(TerminalYieldedCommand, self).resume(returned_value=returned_value)
 
-    def handle_text_output(self, channel, data):
-        buf = self.buffers[channel]
+    def handle_text_output(self, data):
         for chunk in data:
-            buf.append(chunk)
-            self.on_line_parts_received(channel, buf)
+            self.buffer.append(chunk)
+            self.on_line_parts_received(self.buffer)
             if chunk.endswith('\r') or chunk.endswith('\n'):
-                line = ''.join(buf).rstrip('\r\n')
-                buf.clear()
-                self.on_line_received(channel, line)
+                line = ''.join(self.buffer).rstrip('\r\n')
+                print('will clear buffer %s', self.buffer)
+                del self.buffer[:]
+                self.on_line_received(line)
 
     def handle_exit(self):
         pass
 
-    def on_line_received(self, channel, line):
+    def on_line_received(self, line):
         pass
 
-    def on_line_parts_received(self, channel, line_parts):
+    def on_line_parts_received(self, line_parts):
         pass
 
 
 class TerminalWaitForOutputCommand(TerminalYieldedCommand):
-    def __init__(self, terminal, target, allow_partial, channels):
-        super().__init__(terminal)
+    def __init__(self, terminal, target, allow_partial):
+        super(TerminalWaitForOutputCommand, self).__init__(terminal)
 
         self.target = target
         self.allow_partial = allow_partial
-        if isinstance(channels, str):
-            channels = {channels}
-        else:
-            channels = set(channels)
-        self.channels = channels
 
         self._set_predicate()
 
@@ -117,16 +118,12 @@ class TerminalWaitForOutputCommand(TerminalYieldedCommand):
         elif callable(self.target):
             self.predicate = self.target
 
-    def on_line_received(self, channel, line):
+    def on_line_received(self, line):
         if self.allow_partial:
             return
-        if channel not in self.channels:
-            return
 
-    def on_line_parts_received(self, channel, line_parts):
+    def on_line_parts_received(self, line_parts):
         if not self.allow_partial:
-            return
-        if channel not in self.channels:
             return
         if self.predicate(''.join(line_parts)):
             self.run_next_frame('resume')
