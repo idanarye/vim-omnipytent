@@ -9,9 +9,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `ctx.proj_dir`, `ctx.task_dir`, `ctx.cur_dir` and `ctx.file_dir`.
 - Add `g:omnipytent_projectRootMarkers` for picking a parent directory as
   project root when there is no tasks file.
+- Async tasks mechanism.
+  - `INPUT_BUFFER` - creates a buffer, and when the user finishes with it -
+    returns the buffer lines and resumes the command.
+  - `CHOOSE` - runs a chooser UI on the source list. Supports
+    [FZF](https://github.com/junegunn/fzf),
+    [Unite](https://github.com/Shougo/unite.vim),
+    [Denite](https://github.com/Shougo/denite.nvim) and
+    [CtrlP](https://github.com/ctrlpvim/ctrlp.vim). Reverts to `inputlist` if
+    none is available.
 
 ### Changed
 - Look the directory tree for a tasks file.
+
+### Fixed
+- `vim_eval` for lists and dicts.
 
 ## 1.2.0 - 2017-12-19
 ### Added

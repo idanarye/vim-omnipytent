@@ -1,0 +1,37 @@
+Describe Async Commands
+    Before each
+        call PrepareForTest()
+    End
+
+    It Input Buffer
+        CreateTasksfile
+        @task
+        def read_stuff_from_input_buffer(ctx):
+            buf = vim.current.buffer
+            buf.vars['foo'], = yield INPUT_BUFFER(filetype='bar', init='let b:foo = "baz"')
+.
+
+        OP read_stuff_from_input_buffer
+        call setline(1, 'qux')
+        Assert Equals(b:foo, 'baz')
+        close
+        Wait exists('b:foo')
+        Assert Equals(b:foo, 'qux')
+    End
+
+    It Terminal
+        CreateTasksfile
+        @task
+        def run_a_terminal(ctx):
+            terminal = TERMINAL_PANEL('sh', '-c', 'sleep 3 && echo hello > foo && echo done')
+            VAR['b:marker'] = 0
+            yield terminal.wait_for_prompt('done')
+            VAR['b:marker'] = 1
+.
+        OP run_a_terminal
+        Assert Equals(b:marker, 0)
+        Assert !filereadable('foo')
+        Wait b:marker
+        Assert readfile('foo') == ['hello']
+    End
+End

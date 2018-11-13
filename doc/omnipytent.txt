@@ -26,6 +26,7 @@ Writing tasks:               |omnipytent-tasks-syntax|
 Configuration:               |g:omnipytent_defaultPythonVersion|
                             |g:omnipytent_filePrefix|
                             |g:omnipytent_projectRootMarkers|
+                            |g:omnipytent_selectionUI|
 Running shell commands:      |omnipytent-BANG| |omnipytent-SH|
                             |omnipytent-TERMINAL_PANEL|
                             |omnipytent-TERMINAL_TAB|
@@ -99,6 +100,7 @@ Other configuration options:
 
 * |g:omnipytent_defaultPythonVersion|
 * |g:omnipytent_projectRootMarkers|
+* |g:omnipytent_selectionUI|
 
 
 PYTHON VERSIONS                                   *omnipytent-python-versions*
@@ -319,7 +321,19 @@ exposes some helpers to make it easier:
   * Use "TERMINAL_PANEL.vert to create a vertical panel instead.
 
   * "TERMINAL_TAB" and "TERMINAL_PANEL" return a shell executor that can be
-    used to send commands to the opened terminal(it it accepts commands)
+    used to send commands to the opened terminal(it it accepts commands).
+    That shell executor also supports the following methods:
+    * ".send_raw":        Send raw text to the terminal
+    * The "<<" operator:  Same as ".send_raw"
+    * ".wait_for_prompt": Create an async command (|omnipytent-async-commands|)
+                          that returns resumes once a line that contains the
+                          text of the first argument ("target") is written.
+                          * If "target" is "re.Pattern", it will be matched
+                            against that line. Alternatively, use the
+                            ".wait_for_prompt_regex" variant to automatically
+                            convert a string to a regex.
+                          * If "target" is callable, it will be used as a
+                            predicate on that line.
 
 All these act as functions that receive the shell command and it's arguments
 ad Python function parameters: >
@@ -416,6 +430,111 @@ elegant fluent interface for these parameters: >
     def compile_loclist(ctx):
         ERUN.loc('gcc', 'main.c', '-o', 'a.out')
 <
+
+ASYNC COMMANDS                                     *omnipytent-async-commands*
+
+Some operations require Omnipytent to relinquish control back to Vim's event
+loop. For example, if you want to run FZF to pick items from a list and do
+something based on the selection.
+
+To run these operations, you need to `yield` a command object from the task: >
+    @task
+    def run_test(ctx):
+        chosen_test = yield FZF(list_of_tests)
+        run_test(chosen_test)
+<
+The "omnipytent" module exposes some async commands:
+
+                                                     *omnipytent-INPUT_BUFFER*
+* "INPUT_BUFFER" opens a buffer. Returns when the user closes the buffer, with
+  the text written there. Accepts the following arguments:
+  * "text":     Initial text of the input buffer.
+  * "filetype": The filetype of the buffer.
+  * "init":     If callable - will be called after the buffer's creation.
+                If string - will be invoked as a Vim command.
+                                                           *omnipytent-CHOOSE*
+* "CHOOSE" Uses a selection UI to choose from the specified options. Accepts
+  the following arguments:
+  * "source": Mandatory. The list of options to pick from.
+  * "multi":  If True, return a list of selected items. Not supported by all
+              selection UIs.
+  * "prompt": The prompt for the selection UI.
+  * "fmt":    Format function for displaying each option.
+
+To support nesting in Python 2, yielding a generator is equivalent to yielding
+*from* a generator: >
+    @task
+    def foo(ctx):
+        # This:
+        yield bar()
+        # Is the same as this:
+        yield from bar()
+
+    def bar():
+        result = yield SOME_ASYNC_COMMAND
+        use_async_command_result(result)
+<
+CREATING ASYNC COMMANDS                     *omnipytent-creating-AsyncCommand*
+
+The basic async command subclasses "AsyncCommand" and implements "on_yield": >
+
+    from omnipytent.async_execution import AsyncCommand
+
+
+    class MY_ASYNC_COMMAND(AsyncCommand):
+        def on_yield(self):
+            pass
+<
+When async command is yielded, it is assigned an index, registered (so it can
+be resumed later), and the "on_yield" method is called. The purpose of
+"on_yield" is to start the command's operation and to set Vim to resume the
+async command when the operation is finished. This is usually done by setting
+hooks like |map-commands| or |autocommand|s to interact with the async
+command.
+
+The async command has a field called "self.vim_obj" which returns a
+Vim command to get a Vim dict which serves as an handle to the async command.
+That dict has a "call" used for interaction with the async command object.
+It's first argument is the name of the method on the async command object to
+call, and the rest of the arguments are passed to that method. That method can
+return a result which will be the result of the "call" method in Vim.
+
+Back in Python, the async command object has a method called "resume", which,
+when called, will return the execution back to the Omnipytent task. "resume"
+may accept a single argument which will be returned to the task.
+
+For Example: >
+
+    import vim
+    from omnipytent.async_execution import AsyncCommand
+    from omnipytent.util import vim_repr
+
+
+    class COUNT_PRESSES(AsyncCommand):
+        def __init__(self, *keys):
+            self.keys = keys
+            self.result = {key: 0 for key in keys}
+
+        def on_yield(self):
+            for key in self.keys:
+                vim.command('nnoremap %s :call %s.call("increase", %s)<Cr>' % (key, self.vim_obj, vim_repr(key)))
+            vim.command('nnoremap <Cr> :call %s.call("finish")<Cr>' % self.vim_obj)
+
+        def increase(self, key):
+            self.result[key] += 1
+
+        def finish(self):
+            for key in self.keys:
+                vim.command('nunmap %s' % key)
+            vim.command('nunmap <Cr>')
+            self.resume(self.result)
+<
+The async command object also has a method called "run_next_frame", which will
+invoke a method on itself on the next frame of the Vim event loop. The first
+argument is the name of a method and the rest of the arguments are passed
+to that method. This is useful when the signal to resume is sent before Vim
+actually completes everything, in order to delay the actual resume to after
+Vim had finished performing the operation.
 
 TASK DEPENDENCIES                               *omnipytent-task-dependencies*
 

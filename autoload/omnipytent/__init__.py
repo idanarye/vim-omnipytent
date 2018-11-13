@@ -1,7 +1,8 @@
-__all__ = ['task', 'CMD', 'FN', 'VAR', 'OPT', 'BANG', 'SH']
+__all__ = ['task', 'CMD', 'FN', 'VAR', 'OPT', 'BANG', 'SH', 'INPUT_BUFFER', 'CHOOSE']
 
 from .dsl import task
 from .execution import CMD, FN, VAR, OPT, BANG, SH
+from .async_execution import INPUT_BUFFER, CHOOSE
 
 from . import _extending as __extending
 

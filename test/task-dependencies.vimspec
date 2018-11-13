@@ -1,0 +1,66 @@
+Describe Task dependencies
+    Before each
+        call PrepareForTest()
+    End
+
+    It Dependant tasks
+        CreateTasksfile
+        @task
+        def foo(ctx):
+            with open('foo', 'w') as f:
+                f.write('hello')
+
+        @task(foo)
+        def bar(ctx):
+            BANG('cp', 'foo', 'bar')
+.
+        echo 'hi'
+
+        Assert !filereadable('foo')
+        Assert !filereadable('bar')
+        OP foo
+        Assert Equals(readfile('foo'), ['hello'])
+        Assert !filereadable('bar')
+
+        call delete('foo')
+        Assert !filereadable('foo')
+        OP bar
+        Assert Equals(readfile('foo'), ['hello'])
+        Assert Equals(readfile('bar'), ['hello'])
+    End
+
+    It Pass data
+        CreateTasksfile
+        @task
+        def foo(ctx):
+            ctx.pass_data('hello')
+
+        @task(foo)
+        def bar(ctx):
+            assert ctx.dep.foo == 'hello'
+.
+        OP bar
+    End
+
+    It Options task
+        CreateTasksfile
+        @task.options
+        def thing(ctx):
+            foo = 'FOO'
+            bar = 'BAR'
+            baz = 'BAZ'
+
+        @task(thing)
+        def check(ctx, value):
+            assert ctx.dep.thing == value
+.
+        OP thing foo
+        OP check FOO
+
+        OP thing bar
+        OP check BAR
+
+        OP thing baz
+        OP check BAZ
+    End
+End

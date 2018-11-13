@@ -62,7 +62,7 @@ function! s:guessPythonVersion()
     endif
 endfunction
 
-function! omnipytent#invoke(pythonVersion, line1, line2, count, ...)
+function! s:apiEntryPointCommand(pythonVersion, command)
     let l:pythonVersion = a:pythonVersion
     if l:pythonVersion == 0
         let l:pythonVersion = s:guessPythonVersion()
@@ -71,13 +71,17 @@ function! omnipytent#invoke(pythonVersion, line1, line2, count, ...)
     " Put the command for invoking the Python code in a varible, so it if
     " fails Vim won't cry about a missing endif.
     if l:pythonVersion == 2
-        let l:cmd = 'python omnipytent.vim_plugin._api_entry_point("invoke")'
+        let l:baseCmd = 'python '
     elseif l:pythonVersion == 3
-        let l:cmd = 'python3 omnipytent.vim_plugin._api_entry_point("invoke")'
+        let l:baseCmd = 'python3 '
     else
         throw 'Unknown Python version '.a:pythonVersion
     endif
-    execute l:cmd
+    return printf('%s omnipytent.vim_plugin._api_entry_point(%s)', l:baseCmd, string(a:command))
+endfunction
+
+function! omnipytent#invoke(pythonVersion, line1, line2, count, ...)
+    execute s:apiEntryPointCommand(a:pythonVersion, 'invoke')
 endfunction
 
 function! omnipytent#editTask(pythonVersion, splitMode, ...)
@@ -199,5 +203,116 @@ function! omnipytent#convertTasksFilePythonVersion()
         throw 'This build of Vim support only Python 3 plugins'
     else
         throw 'This build of Vim does not support Python plugins'
+    endif
+endfunction
+
+let s:YieldedCommandClass = {}
+function! s:YieldedCommandClass.call(method, ...) dict
+    let l:idx = self.idx
+    let l:method = a:method
+    execute s:apiEntryPointCommand(self.pythonVersion, 'call')
+    return l:return
+endfunction
+function! s:YieldedCommandClass.tryCall(method, ...) dict
+    let l:idx = self.idx
+    let l:method = a:method
+    execute s:apiEntryPointCommand(self.pythonVersion, 'try_call')
+    return l:return
+endfunction
+
+function! omnipytent#_yieldedCommand(pythonVersion, idx)
+    let l:obj = copy(s:YieldedCommandClass)
+    let l:obj.pythonVersion = a:pythonVersion
+    let l:obj.idx = a:idx
+    return l:obj
+endfunction
+
+function! omnipytent#_typeMap(value)
+    let l:type = type(a:value)
+    if l:type == type([]) || l:type == type({})
+        let l:type = map(copy(a:value), 'omnipytent#_typeMap(v:val)[1]')
+    endif
+    return [a:value, l:type]
+endfunction
+
+let s:nextFrameCommands = []
+function! omnipytent#_addNextFrameCommand(yieldedCommand, method, args)
+    call add(s:nextFrameCommands, [a:yieldedCommand, a:method, a:args])
+endfunction
+function! omnipytent#_runNextFrameCommands(...)
+    while !empty(s:nextFrameCommands)
+        let l:tup = remove(s:nextFrameCommands, 0)
+        call call(l:tup[0].tryCall, [l:tup[1]] + l:tup[2], l:tup[0])
+    endwhile
+endfunction
+
+silent! autocmd! omnipytent
+augroup omnipytent
+augroup END
+
+if exists('*timer_start')
+    try
+        call timer_stop(s:timer)
+        unlet s:timer
+    catch
+    endtry
+    let s:timer = timer_start(1, function('omnipytent#_runNextFrameCommands'), {'repeat': -1})
+else
+    augroup omnipytent
+        autocmd omnipytent CursorMoved * call omnipytent#_runNextFrameCommands()
+        autocmd omnipytent CursorMovedI * call omnipytent#_runNextFrameCommands()
+        autocmd omnipytent CursorHold * call omnipytent#_runNextFrameCommands()
+        autocmd omnipytent CursorHoldI * call omnipytent#_runNextFrameCommands()
+    augroup END
+endif
+
+let s:yieldedCommandForJobs = {}
+
+if has('nvim')
+    function! s:termToJob(term) abort
+        return a:term
+    endfunction
+else
+    function! s:termToJob(term) abort
+        return job_getchannel(term_getjob(a:term))
+    endfunction
+endif
+
+function! omnipytent#_registerYieldedCommandForJob(jobId, yieldedCommand) abort
+    let s:yieldedCommandForJobs[s:termToJob(a:jobId)] = a:yieldedCommand
+endfunction
+
+function! omnipytent#_unregisterYieldedCommandForJob(jobId) abort
+    call remove(s:yieldedCommandForJobs, s:termToJob(a:jobId))
+endfunction
+
+function! omnipytent#_vimTerminalChannelCallback(channel, msg) abort
+    let l:yieldedCommand = get(s:yieldedCommandForJobs, a:channel)
+    if empty(l:yieldedCommand)
+        return
+    endif
+    call l:yieldedCommand.tryCall('handle_text_output', split(a:msg, "\10"))
+endfunction
+
+function! omnipytent#_vimTerminalExitCallback(channel, status) abort
+    let l:yieldedCommand = get(s:yieldedCommandForJobs, a:channel)
+    if empty(l:yieldedCommand)
+        return
+    endif
+    call l:yieldedCommand.tryCall('handle_text_output', split(a:msg, "\10"))
+endfunction
+
+function! omnipytent#_nvimTerminalCallback(jobId, data, event) dict abort
+    let l:yieldedCommand = get(s:yieldedCommandForJobs, a:jobId)
+    if empty(l:yieldedCommand)
+        return
+    endif
+    if a:event == 'stdout'
+        call l:yieldedCommand.tryCall('handle_text_output', a:data)
+    elseif a:event == 'stderr'
+        call l:yieldedCommand.tryCall('handle_text_output', a:data)
+    else
+        call l:yieldedCommand.tryCall('handle_exit')
+        call omnipytent#_unregisterYieldedCommandForJob(a:jobId)
     endif
 endfunction

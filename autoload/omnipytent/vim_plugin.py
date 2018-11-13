@@ -4,6 +4,8 @@ import os
 
 from .tasks_file import TasksFile, get_tasks_file
 from .tasks import invoke_with_dependencies
+from .async_execution import AsyncExecutor, AsyncCommand
+from .util import vim_eval, vim_repr
 
 
 def _tasks_file_path():
@@ -17,6 +19,20 @@ def _api_entry_point(command):
             prompt_and_invoke()
         else:
             invoke(*args)
+    elif command == 'call' or command == 'try_call':
+        idx = int(vim.eval('l:idx'))
+        method = vim.eval('l:method')
+        args = vim_eval('a:000')
+        try:
+            command = AsyncCommand.yielded[idx]
+        except KeyError:
+            if command == 'try_call':
+                result = 0
+            else:
+                raise
+        else:
+            result = command.call(method, args)
+        vim.command('let l:return = %s' % vim_repr(result))
     elif command == 'edit':
         split_mode = vim.eval('a:splitMode')
         args = vim.eval('a:000')
@@ -38,7 +54,8 @@ def invoke(taskname, *args):
     tasks_file = get_tasks_file()
     tasks_file.load_if_stale()
     task = tasks_file[taskname]
-    invoke_with_dependencies(tasks_file, task, args)
+    executor = AsyncExecutor(invoke_with_dependencies(tasks_file, task, args))
+    executor.run_next()
 
 
 def edit_task(split_mode, taskname):
