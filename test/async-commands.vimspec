@@ -18,4 +18,20 @@ Describe Async Commands
         Wait exists('b:foo')
         Assert Equals(b:foo, 'qux')
     End
+
+    It Terminal
+        CreateTasksfile
+        @task
+        def run_a_terminal(ctx):
+            terminal = TERMINAL_PANEL('sh', '-c', 'sleep 3 && echo hello > foo && echo done')
+            VAR['b:marker'] = 0
+            yield terminal.wait_for_prompt('done')
+            VAR['b:marker'] = 1
+.
+        OP run_a_terminal
+        Assert Equals(b:marker, 0)
+        Assert !filereadable('foo')
+        Wait b:marker
+        Assert readfile('foo') == ['hello']
+    End
 End

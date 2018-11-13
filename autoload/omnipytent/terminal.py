@@ -101,10 +101,10 @@ class TerminalWaitForOutputCommand(TerminalYieldedCommand):
 
         self.target = target
         self.allow_partial = allow_partial
-        if isinstance(self.channels, str):
-            channels = {self.channels}
+        if isinstance(channels, str):
+            channels = {channels}
         else:
-            channels = set(self.channels)
+            channels = set(channels)
         self.channels = channels
 
         self._set_predicate()
