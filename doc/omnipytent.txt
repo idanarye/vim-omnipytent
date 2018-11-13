@@ -632,6 +632,12 @@ the options task's context to set a preview function. Example: >
 A preview-supporting selection UI will then display each animal's attributes in
 it's preview area.
 
+                                               *omnipytent-options_multi-task*
+The "@task.options_multi" variant is identical to "@task.options", but the user
+is allowed to pick multiple choices and passed data is a list. If the selection
+UI does not support multiple choices, the user can still use task arguments to
+pick multiple options.
+
 WINDOW TASK                                           *omnipytent-window-task*
 
 A window task is a task for creating and preparing a Vim window. It is used
