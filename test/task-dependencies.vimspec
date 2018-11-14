@@ -63,4 +63,29 @@ Describe Task dependencies
         OP thing baz
         OP check BAZ
     End
+
+    It Multi Options task
+        CreateTasksfile
+        @task.options_multi
+        def thing(ctx):
+            foo = 'FOO'
+            bar = 'BAR'
+            baz = 'BAZ'
+
+        @task(thing)
+        def check(ctx, *value):
+            assert ctx.dep.thing == list(value)
+.
+        OP thing foo
+        OP check FOO
+
+        OP thing foo bar
+        OP check FOO BAR
+
+        OP thing bar foo
+        OP check BAR FOO
+
+        OP thing bar baz foo
+        OP check BAR BAZ FOO
+    End
 End
