@@ -607,6 +607,19 @@ You can invoke the options task directly to force a re-prompt, or you can
 invoke it with the desired option's caption as argument to set it(there is
 autocompletion for the option argument)
 
+                                          *omnipytent-options-generator-style*
+Instead of setting variables, you can yield the options. This is good when you
+want to generate them - a common use case is picking a test file:>
+    @task.options
+    def test_file(ctx):
+        ctx.key(lambda p: p.basename)
+        for path in local.path('test').glob('*.vimspec'):
+            yield path
+<
+Note that when you use the generator style you must set "ctx.key" to extract
+the key from each item. This key will be used to cache the result, so make sure
+that it is deterministic.
+
                                                   *omnipytent-options-preview*
 If your selection UI suppors previewing, you can use the "preview" method of
 the options task's context to set a preview function. Example: >

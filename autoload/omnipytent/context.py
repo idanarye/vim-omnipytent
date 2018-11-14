@@ -95,21 +95,24 @@ class CompletionContext:
 
         assert 2 <= len(parts)
         if len(parts) == 2:  # task name completion
-            return cls(task=None,
+            return cls(tasks_file=tasks_file,
+                       task=None,
                        arg_index=None,
                        arg_prefix=parts[1],
                        prev_args=[],
                        cmd_line=cmd_line,
                        cursor_pos=cursor_pos)
         else:
-            return cls(task=tasks_file[parts[1]],
+            return cls(tasks_file=tasks_file,
+                       task=tasks_file[parts[1]],
                        arg_index=len(parts) - 3,
                        arg_prefix=parts[-1],
                        prev_args=parts[2:-1],
                        cmd_line=cmd_line,
                        cursor_pos=cursor_pos)
 
-    def __init__(self, task, arg_index, arg_prefix, prev_args, cmd_line, cursor_pos):
+    def __init__(self, tasks_file, task, arg_index, arg_prefix, prev_args, cmd_line, cursor_pos):
+        self.tasks_file = tasks_file
         self.task = task
         self.arg_index = arg_index
         self.arg_prefix = arg_prefix

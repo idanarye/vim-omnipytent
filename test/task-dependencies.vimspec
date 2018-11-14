@@ -64,7 +64,7 @@ Describe Task dependencies
         OP check BAZ
     End
 
-    It Multi Options task
+    It Multi options task
         CreateTasksfile
         @task.options_multi
         def thing(ctx):
@@ -87,5 +87,28 @@ Describe Task dependencies
 
         OP thing bar baz foo
         OP check BAR BAZ FOO
+    End
+
+    It Generator options task
+        CreateTasksfile
+        @task.options
+        def thing(ctx):
+            ctx.key(str.lower)
+            yield 'FOO'
+            yield 'BAR'
+            yield 'BAZ'
+
+        @task(thing)
+        def check(ctx, value):
+            assert ctx.dep.thing == value
+.
+        OP thing foo
+        OP check FOO
+
+        OP thing bar
+        OP check BAR
+
+        OP thing baz
+        OP check BAZ
     End
 End

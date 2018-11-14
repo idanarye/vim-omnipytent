@@ -1,4 +1,5 @@
 import inspect
+from collections import OrderedDict
 
 import vim
 
@@ -62,6 +63,10 @@ class OptionsTask(Task):
 
     class TaskContext(Task.TaskContext):
         _preview = None
+        _key = None
+
+        def key(self, key):
+            self._key = key
 
         def preview(self, preview):
             self._preview = preview
@@ -93,21 +98,44 @@ class OptionsTask(Task):
     def _varname_filter(self, target):
         return not target.startswith('_') and target not in self.__func_args_set
 
+    def _gen_keys_for_completion(self, cctx):
+        if not inspect.isgeneratorfunction(self.func):
+            for name in self.func.__code__.co_varnames:
+                if self._varname_filter(name):
+                    yield name
+            return
+
+        ictx = InvocationContext(cctx.tasks_file, self)
+        tctx = ictx.for_task(self)
+        for key in self._resolve_options(tctx).keys():
+            yield key
+
     def complete_options(self, ctx):
         if 0 == ctx.arg_index:
-            return filter(self._varname_filter, self.func.__code__.co_varnames)
+            return self._gen_keys_for_completion(ctx)
         else:
             return []
+
+    def _resolve_options(self, ctx):
+        if len(self.__func_args_set) == 0:
+            args = ()
+        else:
+            args = (ctx,)
+
+        if not inspect.isgeneratorfunction(self.func):
+            return function_locals(self.func, *args)
+
+        items = list(self.func(*args))
+        if not ctx._key:
+            raise Exception('ctx.key not set for generator-based options task')
+        return OrderedDict((str(ctx._key(item)), item) for item in items)
 
     def invoke(self, ctx, *args):
         from .async_execution import CHOOSE
         if False:
             yield  # force this into a genrator
         ctx = ctx.for_task(self)
-        if len(self.__func_args_set) == 0:
-            options = function_locals(self.func)
-        else:
-            options = function_locals(self.func, ctx)
+        options = self._resolve_options(ctx)
 
         if 0 == len(args) or not ctx.is_main:
             if ctx._should_repick(options):  # includes the possibility that chosen_key is None
@@ -164,10 +192,8 @@ class OptionsTaskMulti(OptionsTask):
 
     def complete_options(self, ctx):
         already_picked = set(ctx.prev_args)
-        return [
-            key for key in self.func.__code__.co_varnames
-            if self._varname_filter(key)
-            and key not in already_picked]
+        return [key for key in self._gen_keys_for_completion(ctx)
+                if key not in already_picked]
 
     def _pass_from_arguments(self, ctx, options, args):
         def generator():
