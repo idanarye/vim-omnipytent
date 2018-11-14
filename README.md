@@ -5,12 +5,6 @@ REQUIREMENTS
 
  * Python installed on your computer
  * Vim compiled with Python support(check with `:echo has('python')` and/or `:echo has('python3')` from Vim)
- * Optional requirements:
-   * [Plumbum](https://plumbum.readthedocs.io)
-   * [FZF](https://github.com/issues)
-   * [Unite](https://github.com/Shougo/unite.vim)
-   * [Denite](https://github.com/Shougo/denite.nvim)
-   * [CtrlP](https://github.com/ctrlpvim/ctrlp.vim)
 
 INTRODUCTION
 ============
@@ -43,4 +37,4 @@ KEY FEATURES
  * Integration with [Plumbum](https://plumbum.readthedocs.io)
  * Define helpers in other plugins and load them from a special
    `omnipytent.ext` module.
- * Integration with selection UIs: [FZF](https://github.com/issues), [Unite](https://github.com/Shougo/unite.vim), [Denite](https://github.com/Shougo/denite.nvim) and [CtrlP](https://github.com/ctrlpvim/ctrlp.vim).
+
