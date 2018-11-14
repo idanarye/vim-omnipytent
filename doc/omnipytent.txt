@@ -65,6 +65,7 @@ KEY FEATURES                                          *omnipytent-key-features*
 * Integration with Plumbum(https://plumbum.readthedocs.io)
 * Define helpers in other plugins and load them from a special |omnipytent.ext|
   module.
+* Integration with selection UIs: FZF, Unite, Denite and CtrlP.
 
 
 OMNIPYTENT IS NOT A BUILD SYSTEM!            *omnipytent-is-not-a-build-system*
