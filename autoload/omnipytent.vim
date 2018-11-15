@@ -238,6 +238,9 @@ endfunction
 let s:nextFrameCommands = []
 function! omnipytent#_addNextFrameCommand(yieldedCommand, method, args)
     call add(s:nextFrameCommands, [a:yieldedCommand, a:method, a:args])
+    if exists('*timer_start')
+        call timer_start(1, function('omnipytent#_runNextFrameCommands'))
+    endif
 endfunction
 function! omnipytent#_runNextFrameCommands(...)
     while !empty(s:nextFrameCommands)
@@ -250,14 +253,7 @@ silent! autocmd! omnipytent
 augroup omnipytent
 augroup END
 
-if exists('*timer_start')
-    try
-        call timer_stop(s:timer)
-        unlet s:timer
-    catch
-    endtry
-    let s:timer = timer_start(1, function('omnipytent#_runNextFrameCommands'), {'repeat': -1})
-else
+if !exists('*timer_start')
     augroup omnipytent
         autocmd omnipytent CursorMoved * call omnipytent#_runNextFrameCommands()
         autocmd omnipytent CursorMovedI * call omnipytent#_runNextFrameCommands()
