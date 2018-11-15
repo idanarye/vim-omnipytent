@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - `vim_eval` for lists and dicts.
+- Input mode handling when starting terminal.
 
 ## 1.2.0 - 2017-12-19
 ### Added
