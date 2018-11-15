@@ -43,7 +43,11 @@ class Terminal(ShellCommandExecuter):
                 on_stderr=callback,
                 on_exit=callback,
             ))
-            vim.command(r'call feedkeys("a\<C-\>\<C-n>G", "n")')
+            FN.feedkeys('a', 'n')
+            try:
+                vim.command('normal! G')
+            except:
+                pass
             return job_id
 
         def write(self, text):
