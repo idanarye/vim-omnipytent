@@ -34,7 +34,11 @@ KEY FEATURES
    and/or build-system(you'll still need to write individual "build" tasks)
  * Tasks are user-specific. There are many things you need to be considerate
    toward your teammates with - Omnipytent tasks are not one of them!
- * Integration with [Plumbum](https://plumbum.readthedocs.io)
+ * Integration with [Plumbum](https://plumbum.readthedocs.io),
+   [fzf](https://github.com/junegunn/fzf),
+   [Denite](https://github.com/Shougo/denite.nvim),
+   [Unite](https://github.com/Shougo/unite.vim) and
+   [CtrlP](https://github.com/ctrlpvim/ctrlp.vim)
  * Define helpers in other plugins and load them from a special
    `omnipytent.ext` module.
 

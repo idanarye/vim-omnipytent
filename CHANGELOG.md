@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## 1.3.0 - 2018-11-16
 ### Added
 - Add `ctx.proj_dir`, `ctx.task_dir`, `ctx.cur_dir` and `ctx.file_dir`.
 - Add `g:omnipytent_projectRootMarkers` for picking a parent directory as
