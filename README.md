@@ -17,7 +17,9 @@ and as out-of-your-way as possible. Omnipytent is the successor to
 design - but in Python, so it could be used in neovim(which did not have Ruby
 support at the time)
 
-Blog post: https://dev.to/idanarye/omnipytent-5g5l
+Blog posts:
+* https://dev.to/idanarye/omnipytent-5g5l
+* https://dev.to/idanarye/omnipytent-130-async-tasks-and-selection-uis-2e0o
 
 KEY FEATURES
 ============
