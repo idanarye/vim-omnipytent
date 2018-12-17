@@ -111,4 +111,25 @@ Describe Task dependencies
         OP thing baz
         OP check BAZ
     End
+
+    It Pass data with argument defaults
+        CreateTasksfile
+        @task
+        def foo(ctx):
+            ctx.pass_data('foo data')
+
+
+        @task
+        def bar(ctx):
+            ctx.pass_data('bar data')
+
+
+        @task
+        def baz(ctx, foo=foo, bar=bar):
+            assert foo == 'foo data'
+            assert bar == 'bar data'
+.
+
+        OP baz
+    End
 End

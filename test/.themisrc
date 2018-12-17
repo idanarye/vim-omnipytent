@@ -69,3 +69,12 @@ function! s:CreateWaitCommand(predExpr) abort
 endfunction
 
 command! -nargs=1 Wait execute s:CreateWaitCommand(<q-args>)
+
+function! s:ForPythonVersionOnly(pythonVersion) abort
+    if g:omnipytent_defaultPythonVersion != str2nr(a:pythonVersion)
+        command Skip
+        execute 'Skip This test can only work on Python ' . a:pythonVersion
+    endif
+endfunction
+
+command! -nargs=1 ForPythonVersionOnly call s:ForPythonVersionOnly(<q-args>)
