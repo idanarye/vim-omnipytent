@@ -84,6 +84,15 @@ class DepDataFetcher:
                     raise AttributeError('%s did not pass data' % dependency)
         raise AttributeError('%s has no dependency named "%s"' % (self.__task_context.task, name))
 
+    def _get_by_task(self, task):
+        return self.__task_context._parent.dep_data[task]
+
+    def _get_indirect(self, name):
+        for task, value in self.__task_context._parent.dep_data.items():
+            if task.name == name:
+                return value
+        raise KeyError('task %r did not pass data' % (name,))
+
 
 class CompletionContext:
     @classmethod

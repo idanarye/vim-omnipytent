@@ -8,19 +8,65 @@ from .hacks import function_locals
 from .util import input_list, other_windows, flatten_iterator
 
 
+_getargspec = getattr(inspect, 'getfullargspec', inspect.getargspec)
+
+
 class Task(object):
     from .context import TaskContext
+
+    class TaskContext(TaskContext):
+        @property
+        def _kwargs_for_func(self):
+            kwargs = {}
+            for name, task in self.task._special_args.items():
+                kwargs[name] = self.dep._get_by_task(task)
+            return kwargs
 
     def __init__(self, func):
         self.func = func
 
         self.name = func.__name__
-        argspec = inspect.getargspec(func)
+        argspec = _getargspec(func)
+        self._task_ctx_arg_name = argspec.args[0] if argspec.args else None
         self._task_args = argspec.args[1:]  # remove `ctx` from the list
         self._task_varargs = argspec.varargs
+        self._special_args = OrderedDict()
 
         self.dependencies = []
         self.completers = []
+
+        self.__handle_special_args(argspec)
+
+    def __handle_special_args(self, argspec):
+        if not argspec.defaults:
+            return
+        special_defaults = list(self.__split_special_defaults(argspec))
+        if not special_defaults:
+            return
+        special_args = argspec.args[-len(special_defaults):]
+        self._special_args = dict(zip(special_args, special_defaults))
+        assert special_args == self._task_args[-len(special_args):]
+        self._task_args = self._task_args[:-len(special_args)]
+
+    @classmethod
+    def __split_special_defaults(cls, argspec):
+        found_first_special = False
+        for default in argspec.defaults:
+            if cls.__is_default_special(default):
+                found_first_special = True
+                yield default
+            elif found_first_special:
+                raise SyntaxError('Non-special default %s after special defaults' % (default,))
+
+    @classmethod
+    def __is_default_special(cls, default):
+        return isinstance(default, Task)
+
+    def all_dependencies(self, tasks_file):
+        for dependency in self.dependencies:
+            yield dependency
+        for dependency in self._special_args.values():
+            yield dependency
 
     def _run_func_as_generator(self, *args, **kwargs):
         result = self.func(*args, **kwargs)
@@ -38,7 +84,7 @@ class Task(object):
         ctx = ctx.for_task(self)
         if not ctx.is_main:
             args = ()
-        for yielded in self._run_func_as_generator(ctx, *args):
+        for yielded in self._run_func_as_generator(ctx, *args, **ctx._kwargs_for_func):
             yield yielded
 
     def __repr__(self):
@@ -89,14 +135,21 @@ class OptionsTask(Task):
     def __init__(self, func):
         super(OptionsTask, self).__init__(func)
 
-        self.__func_args_set = set(inspect.getargspec(func).args)
-        if 1 < len(self.__func_args_set):
+        if 1 < len(self._task_args):
+            print('===')
+            print('bad bad bad', self._task_args)
+            print('===')
             raise Exception('Options task %s should have 0 or 1 arg' % self)
 
         self.complete(self.complete_options)
 
     def _varname_filter(self, target):
-        return not target.startswith('_') and target not in self.__func_args_set
+        return all([
+            not target.startswith('_'),
+            target != self._task_ctx_arg_name,
+            target not in self._task_args,
+            target not in self._special_args,
+        ])
 
     def _gen_keys_for_completion(self, cctx):
         if not inspect.isgeneratorfunction(self.func):
@@ -117,15 +170,18 @@ class OptionsTask(Task):
             return []
 
     def _resolve_options(self, ctx):
-        if len(self.__func_args_set) == 0:
-            args = ()
-        else:
+        if self._task_ctx_arg_name:
             args = (ctx,)
+        else:
+            args = ()
 
         if not inspect.isgeneratorfunction(self.func):
-            return function_locals(self.func, *args)
+            result = function_locals(self.func, *args, **ctx._kwargs_for_func)
+            for special_arg in self._special_args.keys():
+                result.pop(special_arg, None)
+            return result
 
-        items = list(self.func(*args))
+        items = list(self.func(*args, **ctx._kwargs_for_func))
         if not ctx._key:
             raise Exception('ctx.key not set for generator-based options task')
         return OrderedDict((str(ctx._key(item)), item) for item in items)
@@ -260,7 +316,7 @@ def invoke_with_dependencies(tasks_file, task, args):
     while stack:
         popped_task = stack.pop()
         run_order.insert(0, popped_task)
-        stack += popped_task.dependencies
+        stack += popped_task.all_dependencies(tasks_file)
 
     already_invoked = set()
     with tasks_file.in_tasks_dir_context():

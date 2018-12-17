@@ -63,4 +63,25 @@ Describe Window utils
         Assert Equals(getline(1, '$'), [''])
         Assert Equals(getbufline('foo', 1, '$'), ['', 'hello', 'world'])
     End
+
+    It Pass data to window creating util
+        CreateTasksfile
+        from omnipytent.util import other_windows
+
+        @task
+        def foo(ctx):
+            ctx.pass_data('foo-data')
+
+        @task.window
+        def bar(ctx, foo=foo):
+            CMD.new()
+            CMD.file('foo')
+            vim.current.buffer[:] = [foo]
+
+        @task
+        def baz(ctx, bar=bar):
+            assert bar.buffer[:] == ['foo-data']
+.
+        OP baz
+    End
 End
