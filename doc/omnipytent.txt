@@ -566,6 +566,7 @@ Example: >
     def twice_foo(ctx):
         ctx.pass_data(2 * ctx.dep.foo)
 
+
     @task(foo)
     def trice_foo(ctx):
         ctx.pass_data(3 * ctx.dep.foo)
@@ -575,6 +576,21 @@ Example: >
     def bar(ctx):
         assert 3 * ctx.dep.twice_foo == 2 * ctx.dep.trice_foo
 <
+
+As sugar, you can set the default of the method arguments to another task to
+make that task a dependency and get the passed data from that dependency into
+that argument: >
+    @task
+    def foo(ctx):
+        ctx.pass_data('hello')
+
+
+    @task
+    def bar(ctx, f=foo):
+        assert f == 'hello'
+<
+
+You can only do that for tasks that pass data.
 
 OPTIONS TASK                                         *omnipytent-options-task*
 
