@@ -37,14 +37,18 @@ class __Importer(object):
         except KeyError:
             pass
 
+        loader_function = imp.load_source
         module_path = vim.eval("globpath(&runtimepath, 'omnipytent/%s.py', 1, 1, 1)" % name)
+        if not module_path:
+            module_path = vim.eval("globpath(&runtimepath, 'omnipytent/%s/', 1, 1, 1)" % name)
+            loader_function = imp.load_package
         if not module_path:
             raise ImportError('No Omnipytent extension named %r' % name)
         if 1 < len(module_path):
             raise ImportError('Multiple Omnipytent extensions named %r' % name)
         module_path, = module_path
 
-        submodule = imp.load_source(fullname, module_path)
+        submodule = loader_function(fullname, module_path)
 
         sys.modules[fullname] = submodule
 
