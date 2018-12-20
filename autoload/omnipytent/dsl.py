@@ -1,9 +1,11 @@
 import types
+from functools import wraps
 
 from .tasks import Task, OptionsTask, WindowTask, OptionsTaskMulti
 
 
 def _fluent(func):
+    @wraps(func)
     def wrapper(self, *args, **kwargs):
         if self is self._orig:
             result = self.__class__()
@@ -21,6 +23,7 @@ class TaskDeclarator:
     def __init__(self):
         self._dependencies = []
         self._completers = []
+        self._aliases = []
 
     def _dup_if_orig(self):
         if self is self._orig:
@@ -31,20 +34,33 @@ class TaskDeclarator:
     def _adjust_task(self, task):
         task.dependencies.extend(self._dependencies)
         task.completers.extend(self._completers)
+        task.aliases.extend(self._aliases)
 
     def _decorate(self, func):
         result = self._task_class(func)
         self._adjust_task(result)
         return result
 
-    def __call__(self, *args):
-        if len(args) == 1 and args[0].__class__ == types.FunctionType:
-            return self._decorate(args[0])
-        return self._deps(*args)
-
     @_fluent
-    def _deps(self, *deps):
+    def _call_impl(self, *deps, **kwargs):
         self._dependencies.extend(deps)
+        try:
+            alias = kwargs.pop('alias')
+        except KeyError:
+            pass
+        else:
+            if not alias:
+                self._aliases = []
+            if isinstance(alias, str):
+                self._aliases = alias.split()
+            else:
+                self._aliases = list(alias)
+
+    @wraps(_call_impl)
+    def __call__(self, *args, **kwargs):
+        if len(args) == 1 and not kwargs and args[0].__class__ == types.FunctionType:
+            return self._decorate(args[0])
+        return self._call_impl(*args, **kwargs)
 
     @_fluent
     def complete(self, completer):

@@ -37,6 +37,7 @@ Basic interaction with Vim:  |omnipytent-CMD| |omnipytent-FN| |omnipytent-OPT|
 Task dependencies:           |omnipytent-task-dependencies|
                             |omnipytent-pass_data| |omnipytent-dep|
 Special tasks:               |omnipytent-options-task| |omnipytent-window-task|
+Task aliases                 |omnipytent-task-aliases|
 Task argument completion:    |omnipytent-task-argument-completion|
                             |omnipytent-dir_completer|
                             |omnipytent-file_completer|
@@ -700,6 +701,65 @@ them: >
     def compile(ctx)
         ctx.dep.open_shell << 'gcc main.c -o a.out'
 <
+
+TASK ALIASES                                         *omnipytent-task-aliases*
+
+You can add aliases to tasks using the "alias=" keyword argument. To add
+multiple aliases use either a list or a whitespace separated string.
+
+Example: >
+    @task(alias='foo-1')
+    def foo(ctx):
+        # ...
+
+
+    @task(alias=['bar-1', 'bar-2'])
+    def bar(ctx):
+        # ...
+
+
+    @task(alias='baz-1 baz-2'])
+    def baz(ctx):
+        # ...
+<
+
+":OP foo-1" will trigger "foo", ":OP bar-1" and "OP bar-2" will trigger "bar",
+and ":OP baz-1" and ":OP baz-2" will trigger "baz".
+
+This is useful if you have tasks in specific projects that you run frequently
+but their names are only relevant for that project. Usually option picking
+tasks: >
+    @task.options(alias=':1')
+    def choose_animal(ctx):
+        ctx.key(str)
+        yield 'dog'
+        yield 'cat'
+        yield 'snake'
+
+
+    @task.options(alias=':2')
+    def choose_action(ctx):
+        ctx.key(str)
+        yield 'feed'
+        yield 'pet'
+        yield 'bath'
+
+
+    @task
+    def run(ctx, animal=choose_animal, action=choose_action):
+        BANG('./do-action', action, animal)
+<
+
+Then, in your .vimrc: >
+    nnoremap <Leader>o1 :OP :1<Cr>
+    nnoremap <Leader>o2 :OP :2<Cr>
+    " same for the other digit keys
+
+    nnoremap <Leader>or :OP run<Cr>
+<
+
+And you'll have keymaps for setting the action and the animal. "run" is generic
+and common enough to have its own dedicated keymap without needing an alias.
 
 TASK ARGUMENT COMPLETION                 *omnipytent-task-argument-completion*
 

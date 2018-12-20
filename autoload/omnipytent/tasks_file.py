@@ -120,6 +120,8 @@ class TasksFile:
         for ident, value in module_iteritems:
             if isinstance(value, Task):
                 self.tasks[ident] = value
+                for alias in value.aliases:
+                    self.tasks[alias] = value
         self.last_modified = os.path.getmtime(self.filename)
         self.tasks_cache = self.tasks_cache
         for key in list(self.tasks_cache.keys()):

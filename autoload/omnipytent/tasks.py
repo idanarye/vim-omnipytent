@@ -34,6 +34,7 @@ class Task(object):
 
         self.dependencies = []
         self.completers = []
+        self.aliases = []
 
         self.__handle_special_args(argspec)
 
