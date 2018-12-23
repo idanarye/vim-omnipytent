@@ -39,18 +39,22 @@ class Task(object):
         self.__handle_special_args(argspec)
 
     def __handle_special_args(self, argspec):
-        if not argspec.defaults:
-            return
         special_defaults = list(self.__split_special_defaults(argspec))
-        if not special_defaults:
-            return
-        special_args = argspec.args[-len(special_defaults):]
-        self._special_args = dict(zip(special_args, special_defaults))
-        assert special_args == self._task_args[-len(special_args):]
-        self._task_args = self._task_args[:-len(special_args)]
+        if special_defaults:
+            special_args = argspec.args[-len(special_defaults):]
+            self._special_args.update(zip(special_args, special_defaults))
+            assert special_args == self._task_args[-len(special_args):]
+            self._task_args = self._task_args[:-len(special_args)]
+        if getattr(argspec, 'kwonlydefaults', None):
+            for k, v in argspec.kwonlydefaults.items():
+                if not self.__is_default_special(v):
+                    raise SyntaxError('Non-special argument %s=%s' % (k, v))
+                self._special_args[k] = v
 
     @classmethod
     def __split_special_defaults(cls, argspec):
+        if not argspec.defaults:
+            return
         found_first_special = False
         for default in argspec.defaults:
             if cls.__is_default_special(default):
@@ -137,9 +141,6 @@ class OptionsTask(Task):
         super(OptionsTask, self).__init__(func)
 
         if 1 < len(self._task_args):
-            print('===')
-            print('bad bad bad', self._task_args)
-            print('===')
             raise Exception('Options task %s should have 0 or 1 arg' % self)
 
         self.complete(self.complete_options)

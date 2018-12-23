@@ -162,4 +162,25 @@ Describe Task dependencies
         " OP baz b
         " OP qux bar-data
     End
+
+    It Pass data with argument defaults after vararg
+        CreateTasksfile
+        @task
+        def foo(ctx):
+            ctx.pass_data('foo-data')
+
+
+        @task
+        def bar(ctx):
+            ctx.pass_data('bar-data')
+
+
+        @task
+        def baz(ctx, *args, foo=foo, bar=bar):
+            assert list(args) == [foo, bar]
+.
+        ForPythonVersionOnly 3
+
+        OP baz foo-data bar-data
+    End
 End
