@@ -628,6 +628,14 @@ You can invoke the options task directly to force a re-prompt, or you can
 invoke it with the desired option's caption as argument to set it(there is
 autocompletion for the option argument)
 
+An options task will always execute the function - even, when it remembers your
+choice. If you want to disable that, and only execute the function when you
+invoke it directly, pass "cache_choice_value=True": >
+    @task.options(cache_choice_value=True)
+    def choose_stuff(ctx):
+        # Gathering options, may take very long time to complete
+<
+
                                           *omnipytent-options-generator-style*
 Instead of setting variables, you can yield the options. This is good when you
 want to generate them - a common use case is picking a test file:>

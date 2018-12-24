@@ -23,7 +23,7 @@ class TaskDeclarator:
     def __init__(self):
         self._dependencies = []
         self._completers = []
-        self._aliases = []
+        self._params = {}
 
     def _dup_if_orig(self):
         if self is self._orig:
@@ -34,27 +34,16 @@ class TaskDeclarator:
     def _adjust_task(self, task):
         task.dependencies.extend(self._dependencies)
         task.completers.extend(self._completers)
-        task.aliases.extend(self._aliases)
 
     def _decorate(self, func):
-        result = self._task_class(func)
+        result = self._task_class(func, **self._params)
         self._adjust_task(result)
         return result
 
     @_fluent
     def _call_impl(self, *deps, **kwargs):
         self._dependencies.extend(deps)
-        try:
-            alias = kwargs.pop('alias')
-        except KeyError:
-            pass
-        else:
-            if not alias:
-                self._aliases = []
-            if isinstance(alias, str):
-                self._aliases = alias.split()
-            else:
-                self._aliases = list(alias)
+        self._params.update(**kwargs)
 
     @wraps(_call_impl)
     def __call__(self, *args, **kwargs):

@@ -183,4 +183,68 @@ Describe Task dependencies
 
         OP baz foo-data bar-data
     End
+
+    It Cache option choosen value
+    CreateTasksfile
+        x = 1
+        y = 1
+
+        @task.options
+        def foo(ctx):
+            global x
+            ctx.key(str)
+            x += 1
+            yield 'f'
+
+        @task.options(cache_choice_value=True)
+        def bar(ctx):
+            global y
+            ctx.key(str)
+            y += 1
+            yield 'b'
+
+        @task
+        def check(ctx, target_x, target_y, foo=foo, bar=bar):
+            assert foo == 'f'
+            assert bar == 'b'
+            assert x == int(target_x)
+            assert y == int(target_y)
+.
+        OP check 2 2
+        OP check 3 2
+        OP bar
+        OP check 4 3
+    End
+
+    It Cache multi_option choosen value
+    CreateTasksfile
+        x = 1
+        y = 1
+
+        @task.options_multi
+        def foo(ctx):
+            global x
+            ctx.key(str)
+            x += 1
+            yield 'f'
+
+        @task.options_multi(cache_choice_value=True)
+        def bar(ctx):
+            global y
+            ctx.key(str)
+            y += 1
+            yield 'b'
+
+        @task
+        def check(ctx, target_x, target_y, foo=foo, bar=bar):
+            assert foo == ['f']
+            assert bar == ['b']
+            assert x == int(target_x)
+            assert y == int(target_y)
+.
+        OP check 2 2
+        " OP check 3 2
+        " OP bar
+        " OP check 4 3
+    End
 End

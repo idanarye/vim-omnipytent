@@ -22,7 +22,7 @@ class Task(object):
                 kwargs[name] = self.dep._get_by_task(task)
             return kwargs
 
-    def __init__(self, func):
+    def __init__(self, func, alias=[]):
         self.func = func
 
         self.name = func.__name__
@@ -34,7 +34,12 @@ class Task(object):
 
         self.dependencies = []
         self.completers = []
-        self.aliases = []
+        if not alias:
+            self.aliases = []
+        elif isinstance(alias, str):
+            self.aliases = alias.split()
+        else:
+            self.aliases = list(alias)
 
         self.__handle_special_args(argspec)
 
@@ -132,13 +137,16 @@ class OptionsTask(Task):
             return self._chosen_key not in options
 
         def _pass_choice(self, options, chosen_key):
-            self.pass_data(options.get(chosen_key, None))
+            value = options.get(chosen_key, None)
+            self.pass_data(value)
+            return value
 
         def _pass_from_arguments(self, options, args):
             pass
 
-    def __init__(self, func):
-        super(OptionsTask, self).__init__(func)
+    def __init__(self, func, cache_choice_value=False, **kwargs):
+        self._cache_choice_value = cache_choice_value
+        super(OptionsTask, self).__init__(func, **kwargs)
 
         if 1 < len(self._task_args):
             raise Exception('Options task %s should have 0 or 1 arg' % self)
@@ -193,6 +201,16 @@ class OptionsTask(Task):
         if False:
             yield  # force this into a genrator
         ctx = ctx.for_task(self)
+
+        if self._cache_choice_value and not ctx.is_main:
+            try:
+                chosen_value = ctx.cache.chosen_value
+            except AttributeError:
+                pass
+            else:
+                ctx.pass_data(chosen_value)
+                return
+
         options = self._resolve_options(ctx)
 
         if 0 == len(args) or not ctx.is_main:
@@ -201,7 +219,10 @@ class OptionsTask(Task):
                 if 0 == len(options):
                     raise Exception('No options set in %s' % self)
                 elif 1 == len(options):
-                    ctx.pass_data(next(iter(options.values())))
+                    single_key, = options.keys()
+                    single_value = ctx._pass_choice(options, single_key)
+                    if self._cache_choice_value:
+                        ctx.cache.chosen_value = single_value
                     return
                 if ctx._preview:
                     def preview(key):
@@ -213,6 +234,8 @@ class OptionsTask(Task):
                 chosen_key = async_cmd._returned_value
                 if chosen_key:
                     ctx.cache.chosen_key = chosen_key
+                    if self._cache_choice_value:
+                        ctx.cache.chosen_value = options.get(chosen_value, None)
             else:
                 chosen_key = ctx._chosen_key
 
@@ -225,6 +248,8 @@ class OptionsTask(Task):
             chosen_key = args[0]
             if self._varname_filter(chosen_key) and chosen_key in options:
                 ctx.cache.chosen_key = chosen_key
+                if self._cache_choice_value:
+                    ctx.cache.chosen_value = options[chosen_key]
                 ctx.pass_data(options[chosen_key])
             else:
                 raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
@@ -246,7 +271,9 @@ class OptionsTaskMulti(OptionsTask):
             return not set(self._chosen_key).issubset(options)
 
         def _pass_choice(self, options, chosen_key):
-            self.pass_data(list(map(options.get, chosen_key)))
+            value = list(map(options.get, chosen_key))
+            self.pass_data(value)
+            return value
 
     def complete_options(self, ctx):
         already_picked = set(ctx.prev_args)
