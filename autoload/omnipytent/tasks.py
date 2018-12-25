@@ -234,8 +234,9 @@ class OptionsTask(Task):
                 chosen_key = async_cmd._returned_value
                 if chosen_key:
                     ctx.cache.chosen_key = chosen_key
+                    chosen_value = ctx._pass_choice(options, chosen_key)
                     if self._cache_choice_value:
-                        ctx.cache.chosen_value = options[chosen_key]
+                        ctx.cache.chosen_value = chosen_value
             else:
                 chosen_key = ctx._chosen_key
 
