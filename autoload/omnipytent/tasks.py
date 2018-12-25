@@ -235,7 +235,7 @@ class OptionsTask(Task):
                 if chosen_key:
                     ctx.cache.chosen_key = chosen_key
                     if self._cache_choice_value:
-                        ctx.cache.chosen_value = options.get(chosen_value, None)
+                        ctx.cache.chosen_value = options[chosen_key]
             else:
                 chosen_key = ctx._chosen_key
 
