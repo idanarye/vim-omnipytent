@@ -1,15 +1,15 @@
 from functools import partial
 
+from .tasks import OptionsTask, OptionsTaskMulti
 from .task_maker import TaskMaker
 
 
 class CombineSources(TaskMaker):
     _is_maker_ = True
 
-    from .tasks import OptionsTask as TaskType
-
-    def __init__(self, sources):
+    def __init__(self, sources, multi=False):
         self.sources = sources
+        self.TaskType = OptionsTaskMulti if multi else OptionsTask
 
     def set_sources(self, *sources):
         self.sources = sources
@@ -43,8 +43,3 @@ class CombineSources(TaskMaker):
 
         if has_preview:
             ctx.preview(partial(redirector, '_preview'))
-
-
-class CombineSourcesMulti(CombineSources):
-    _is_maker_ = True
-    from omnipytent.tasks import OptionsTaskMulti as TaskType

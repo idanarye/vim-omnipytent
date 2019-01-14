@@ -9,13 +9,12 @@ __all__ = [
     'INPUT_BUFFER',
     'CHOOSE',
     'CombineSources',
-    'CombineSourcesMulti',
 ]
 
 from .dsl import task
 from .execution import CMD, FN, VAR, OPT, BANG, SH
 from .async_execution import INPUT_BUFFER, CHOOSE
-from .task_makers import CombineSources, CombineSourcesMulti
+from .task_makers import CombineSources
 
 from . import _extending as __extending
 

@@ -38,7 +38,6 @@ Task dependencies:           |omnipytent-task-dependencies|
                             |omnipytent-pass_data| |omnipytent-dep|
 Special tasks:               |omnipytent-options-task| |omnipytent-window-task|
                             |omnipytent-CombineSources|
-                            |omnipytent-CombineSourcesMulti|
 Task aliases                 |omnipytent-task-aliases|
 Task argument completion:    |omnipytent-task-argument-completion|
                             |omnipytent-dir_completer|
@@ -704,10 +703,8 @@ UI does not support multiple choices, the user can still use task arguments to
 pick multiple options.
 
 COMBINED SOURCES TASK                              *omnipytent-CombineSources*
-                                              *omnipytent-CombineSourcesMulti*
 
-You can use "CombineSources" or "CombineSourcesMulti" to combine multiple
-source tasks into one: >
+You can use "CombineSources" to combine multiple source tasks into one: >
     @task.options
     def source1(ctx):
         # ...
@@ -731,6 +728,13 @@ This will create a new task that displays all the options from "sources". Each
 source can have its own "key", "preview" and "value" functions, and the
 combined task will use for each option the functions from the source that
 defined it.
+
+To make the task a multi-options task, set "multi = True": >
+    class combined_sources(CombineSources):
+        multi = True
+
+        sources = [...]
+<
 
 WINDOW TASK                                           *omnipytent-window-task*
 

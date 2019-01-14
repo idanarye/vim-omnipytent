@@ -56,7 +56,8 @@ Describe Combine sources
             yield 3
             yield 4
 
-        class combined_sources(CombineSourcesMulti):
+        class combined_sources(CombineSources):
+            multi = True
             sources = [source1, source2]
 
         @task(combined_sources)

@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Task aliases.
 - `cache_choice_value`
 - `ctx.value` for options tasks.
-- `CombineSources` and `CombineSourcesMulti`.
+- `CombineSources`
 
 ### Fixed
 - Package structure in `omnipytent.ext`.
