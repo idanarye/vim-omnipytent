@@ -27,15 +27,19 @@ def socket_bound(dlg):
         while active[0]:
             try:
                 con, addr = sock.accept()
-            except OSError:
+            except (OSError, socket.timeout):
                 continue
-            threading.Thread(target=connection_thread, args=(con,), daemon=True).start()
+            thread = threading.Thread(target=connection_thread, args=(con,))
+            thread.daemon = True
+            thread.start()
 
     def connection_thread(con):
         con.send(dlg(read_all(con)))
         con.close()
 
-    threading.Thread(target=server_thread, daemon=True).start()
+    thread = threading.Thread(target=server_thread)
+    thread.daemon = True
+    thread.start()
 
     try:
         yield sock.getsockname()[1]
@@ -54,4 +58,9 @@ if __name__ == '__main__':
     sock.connect(('localhost', int(port)))
     sock.send(data.encode('utf8'))
     sock.shutdown(socket.SHUT_WR)
-    sys.stdout.buffer.write(read_all(sock))
+    try:
+        buffer = sys.stdout.buffer
+    except AttributeError:
+        sys.stdout.write(read_all(sock))
+    else:
+        buffer.write(read_all(sock))

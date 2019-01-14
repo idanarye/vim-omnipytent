@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Sugar for task dependencies (using argument defaults).
 - Task aliases.
 - `cache_choice_value`
+- `ctx.value` for options tasks.
+- `CombineSources` and `CombineSourcesMulti`.
 
 ### Fixed
 - Package structure in `omnipytent.ext`.

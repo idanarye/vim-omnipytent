@@ -5,7 +5,7 @@ import vim
 
 from .context import InvocationContext
 from .hacks import function_locals
-from .util import input_list, other_windows, flatten_iterator
+from .util import input_list, other_windows, flatten_iterator, is_generator_callable
 
 
 _getargspec = getattr(inspect, 'getfullargspec', inspect.getargspec)
@@ -26,7 +26,10 @@ class Task(object):
         self.func = func
 
         self.name = func.__name__
-        argspec = _getargspec(func)
+        try:
+            argspec = _getargspec(func)
+        except TypeError:
+            argspec = _getargspec(func.__call__)
         self._task_ctx_arg_name = argspec.args[0] if argspec.args else None
         self._task_args = argspec.args[1:]  # remove `ctx` from the list
         self._task_varargs = argspec.varargs
@@ -118,11 +121,15 @@ class OptionsTask(Task):
     MULTI = False
 
     class TaskContext(Task.TaskContext):
-        _preview = None
         _key = None
+        _value = staticmethod(lambda v: v)
+        _preview = None
 
         def key(self, key):
             self._key = key
+
+        def value(self, value):
+            self._value = value
 
         def preview(self, preview):
             self._preview = preview
@@ -138,6 +145,7 @@ class OptionsTask(Task):
 
         def _pass_choice(self, options, chosen_key):
             value = options.get(chosen_key, None)
+            value = self._value(value)
             self.pass_data(value)
             return value
 
@@ -162,7 +170,7 @@ class OptionsTask(Task):
         ])
 
     def _gen_keys_for_completion(self, cctx):
-        if not inspect.isgeneratorfunction(self.func):
+        if not is_generator_callable(self.func):
             for name in self.func.__code__.co_varnames:
                 if self._varname_filter(name):
                     yield name
@@ -185,7 +193,7 @@ class OptionsTask(Task):
         else:
             args = ()
 
-        if not inspect.isgeneratorfunction(self.func):
+        if not is_generator_callable(self.func):
             result = function_locals(self.func, *args, **ctx._kwargs_for_func)
             for special_arg in self._special_args.keys():
                 result.pop(special_arg, None)
@@ -272,9 +280,11 @@ class OptionsTaskMulti(OptionsTask):
             return not set(self._chosen_key).issubset(options)
 
         def _pass_choice(self, options, chosen_key):
-            value = list(map(options.get, chosen_key))
-            self.pass_data(value)
-            return value
+            values = map(options.get, chosen_key)
+            values = map(self._value, values)
+            values = list(values)
+            self.pass_data(values)
+            return values
 
     def complete_options(self, ctx):
         already_picked = set(ctx.prev_args)

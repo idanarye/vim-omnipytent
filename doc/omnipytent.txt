@@ -37,6 +37,8 @@ Basic interaction with Vim:  |omnipytent-CMD| |omnipytent-FN| |omnipytent-OPT|
 Task dependencies:           |omnipytent-task-dependencies|
                             |omnipytent-pass_data| |omnipytent-dep|
 Special tasks:               |omnipytent-options-task| |omnipytent-window-task|
+                            |omnipytent-CombineSources|
+                            |omnipytent-CombineSourcesMulti|
 Task aliases                 |omnipytent-task-aliases|
 Task argument completion:    |omnipytent-task-argument-completion|
                             |omnipytent-dir_completer|
@@ -674,11 +676,61 @@ the options task's context to set a preview function. Example: >
 A preview-supporting selection UI will then display each animal's attributes in
 it's preview area.
 
+                                                    *omnipytent-options-value*
+You can use the "value" method of teh options task's context to set a value
+mapper function. This is useful when you have data the key/preview should
+depend on but should not be passed from the task. Example: >
+    @task.options
+    def choose_config(ctx):
+        import glob, json
+
+        ctx.key(str)
+
+        @ctx.value
+        def value(filename):
+            with open(filename) as f:
+                return json.load(f)
+
+        for filename in glob.glob('*.json'):
+            yield filename
+<
+We display the filename, but the data passed from choose_config is just the
+content of the file.
+
                                                *omnipytent-options_multi-task*
 The "@task.options_multi" variant is identical to "@task.options", but the user
 is allowed to pick multiple choices and passed data is a list. If the selection
 UI does not support multiple choices, the user can still use task arguments to
 pick multiple options.
+
+COMBINED SOURCES TASK                              *omnipytent-CombineSources*
+                                              *omnipytent-CombineSourcesMulti*
+
+You can use "CombineSources" or "CombineSourcesMulti" to combine multiple
+source tasks into one: >
+    @task.options
+    def source1(ctx):
+        # ...
+
+
+    @task.options
+    def source2(ctx):
+        # ...
+
+
+    class combined_sources(CombineSources):
+        alias = ...
+
+        sources = [
+            source1,
+            source2,
+        ]
+<
+
+This will create a new task that displays all the options from "sources". Each
+source can have its own "key", "preview" and "value" functions, and the
+combined task will use for each option the functions from the source that
+defined it.
 
 WINDOW TASK                                           *omnipytent-window-task*
 

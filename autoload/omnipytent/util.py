@@ -222,3 +222,14 @@ def flatten_iterator(it):
             item = it.send(send)
     except StopIteration:
         pass
+
+
+def is_generator_callable(obj):
+    if inspect.isgeneratorfunction(obj):
+        return True
+    try:
+        call = obj.__call__
+    except AttributeError:
+        return False
+    else:
+        return inspect.isgeneratorfunction(call)

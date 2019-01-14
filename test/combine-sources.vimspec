@@ -1,0 +1,105 @@
+Describe Combine sources
+    Before each
+        call PrepareForTest()
+    End
+
+    It Combine sources
+        CreateTasksfile
+        @task.options
+        def source1(ctx):
+            ctx.key('k1-{0}'.format)
+            ctx.value('v1-{0}'.format)
+            yield 1
+            yield 2
+
+        @task.options
+        def source2(ctx):
+            ctx.key('k2-{0}'.format)
+            ctx.value('v2-{0}'.format)
+            yield 3
+            yield 4
+
+        class combined_sources(CombineSources):
+            sources = [source1, source2]
+
+        @task
+        def should_be(ctx, target, cs=combined_sources):
+            assert target == cs
+.
+
+        OP combined_sources k1-1
+        OP should_be v1-1
+
+        OP combined_sources k1-2
+        OP should_be v1-2
+
+        OP combined_sources k2-3
+        OP should_be v2-3
+
+        OP combined_sources k2-4
+        OP should_be v2-4
+    End
+
+    It Combine sources multi
+        CreateTasksfile
+        @task.options
+        def source1(ctx):
+            ctx.key('k1-{0}'.format)
+            ctx.value('v1-{0}'.format)
+            yield 1
+            yield 2
+
+        @task.options
+        def source2(ctx):
+            ctx.key('k2-{0}'.format)
+            ctx.value('v2-{0}'.format)
+            yield 3
+            yield 4
+
+        class combined_sources(CombineSourcesMulti):
+            sources = [source1, source2]
+
+        @task(combined_sources)
+        def should_be(ctx, *target):
+            assert list(target) == list(ctx.dep.combined_sources)
+.
+
+        OP combined_sources k1-1 k2-3
+        OP should_be v1-1 v2-3
+    End
+
+    It Combine sources deps
+        CreateTasksfile
+        @task
+        def dep1(ctx):
+            ctx.pass_data('1')
+
+        @task
+        def dep2(ctx):
+            ctx.pass_data('2')
+
+        @task.options
+        def source1(ctx, d=dep1):
+            ctx.key(str)
+            yield d
+
+        @task.options
+        def source2(ctx, d=dep2):
+            ctx.key(str)
+            yield d
+
+        class combined_sources(CombineSources):
+            sources = [source1, source2]
+
+        @task
+        def should_be(ctx, target, cs=combined_sources):
+            assert target == cs
+.
+
+        OP combined_sources 1
+        OP should_be 1
+
+        OP combined_sources 2
+        OP should_be 2
+    End
+End
