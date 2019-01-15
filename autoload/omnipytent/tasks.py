@@ -124,6 +124,7 @@ class OptionsTask(Task):
         _key = None
         _value = staticmethod(lambda v: v)
         _preview = None
+        _score = None
 
         def key(self, key):
             self._key = key
@@ -133,6 +134,9 @@ class OptionsTask(Task):
 
         def preview(self, preview):
             self._preview = preview
+
+        def score(self, score):
+            self._score = score
 
         @property
         def _chosen_key(self):
@@ -237,7 +241,14 @@ class OptionsTask(Task):
                         return ctx._preview(options[key])
                 else:
                     preview = None
-                async_cmd = CHOOSE(options_keys, preview=preview, multi=self.MULTI)
+
+                if ctx._score:
+                    def score(key):
+                        return ctx._score(options[key])
+                else:
+                    score = None
+
+                async_cmd = CHOOSE(options_keys, preview=preview, score=score, multi=self.MULTI)
                 yield async_cmd
                 chosen_key = async_cmd._returned_value
                 if chosen_key:
@@ -270,8 +281,6 @@ class OptionsTaskMulti(OptionsTask):
     MULTI = True
 
     class TaskContext(OptionsTask.TaskContext):
-        _preview = None
-
         def _should_repick(self, options):
             if self.is_main:
                 return True

@@ -468,6 +468,8 @@ The "omnipytent" module exposes some async commands:
   * "fmt":     Format function for displaying each option.
   * "preview": Preview function for generating item preview. Only supported in
                FZF, Unite and Denite.
+  * "score":   Score function to sort the list of items so that higher scored
+               items appear first.
 
 To support nesting in Python 2, yielding a generator is equivalent to yielding
 *from* a generator: >
@@ -675,8 +677,20 @@ the options task's context to set a preview function. Example: >
 A preview-supporting selection UI will then display each animal's attributes in
 it's preview area.
 
+                                                    *omnipytent-options-score*
+You can use the "score" method of the options task's context to set a score
+function. This is useful to make preferred items appear earlier in the
+selection UI, making them easier to choose.
+>
+    def test_to_run(ctx):
+        ctx.key(str)
+        ctx.score(lambda test: test == current_test)
+        for test in tests:
+            yield test
+<
+
                                                     *omnipytent-options-value*
-You can use the "value" method of teh options task's context to set a value
+You can use the "value" method of the options task's context to set a value
 mapper function. This is useful when you have data the key/preview should
 depend on but should not be passed from the task. Example: >
     @task.options

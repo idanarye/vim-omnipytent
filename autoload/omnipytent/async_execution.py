@@ -120,8 +120,10 @@ class INPUT_BUFFER(AsyncCommand):
 
 
 class SelectionUI(AsyncCommand):
-    def __init__(self, source, multi=False, prompt=None, fmt=str, preview=None):
+    def __init__(self, source, multi=False, prompt=None, fmt=str, preview=None, score=None):
         self.source = list(source)
+        if score:
+            self.source.sort(key=score, reverse=True)
         self.multi = multi
         self.prompt = prompt
         self.fmt = fmt
@@ -198,9 +200,9 @@ def __selection_ui_cls(selection_ui):
         return getattr(importlib.import_module(module_name), class_name)
 
 
-def CHOOSE(source, multi=False, prompt=None, fmt=str, preview=None):
+def CHOOSE(source, multi=False, prompt=None, fmt=str, preview=None, score=None):
     selection_ui = vim.vars.get('omnipytent_selectionUI') or __selection_ui()
     selection_ui_cls = __selection_ui_cls(selection_ui)
 
-    return selection_ui_cls(source=source, multi=multi, prompt=prompt, fmt=fmt, preview=preview)
+    return selection_ui_cls(source=source, multi=multi, prompt=prompt, fmt=fmt, preview=preview, score=score)
 
