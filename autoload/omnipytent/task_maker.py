@@ -16,8 +16,8 @@ class TaskMaker(TaskMakerMeta('_TaskMakerBaes_', (), dict(_is_maker_=True))):
 
     @classmethod
     def _make_task(cls, name, dct, alias=[]):
-        module = dct.pop('__module__', None)
-        qualname = dct.pop('__qualname__', None)
+        dct.pop('__module__', None)
+        dct.pop('__qualname__', None)
         try:
             alias = dct.pop('alias')
         except KeyError:

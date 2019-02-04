@@ -48,9 +48,11 @@ class VimFunction(object):
     def __init__(self, function):
         self._function = function
 
+    def raw_call(self, *args):
+        return RawVim.fmt('%s(%s)', self._function, ', '.join(map(vim_repr, args)))
+
     def __call__(self, *args):
-        func_expr = '%s(%s)' % (self._function, ', '.join(map(vim_repr, args)))
-        return vim_eval(func_expr)
+        return vim_eval(self.raw_call(*args))
 
     def _to_raw_vim_(self):
         return RawVim.fmt('function(%s)' % vim_repr(self._function))

@@ -34,6 +34,11 @@ class Terminal(ShellCommandExecuter):
                         # Unlike Neovim's, with Vim 8's terminal you need to enter
                         # insert mode inside the terminal after sending the keys.
                         vim.command(r'call feedkeys("a\<C-\>\<C-n>G", "n")')
+
+        @property
+        def alive(self):
+            return FN.string(FN.term_getjob.raw_call(self.job_id)).endswith(' run')
+
     elif bool(int(vim.eval('exists("*termopen")'))):  # Neovim
         @staticmethod
         def __start(command):
@@ -52,6 +57,15 @@ class Terminal(ShellCommandExecuter):
 
         def write(self, text):
             FN.jobsend(self.job_id, text)
+
+        @property
+        def alive(self):
+            try:
+                FN.jobsend(self.job_id, '')
+            except Exception:
+                return False
+            else:
+                return True
 
     def send_raw(self, text):
         self.write(text + '\n')

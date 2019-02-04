@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `ctx.value` for options tasks.
 - `CombineSources`
 - `score` for `CHOOSE` and for options tasks (`ctx.score`)
+- `Terminal.alive`
 
 ### Fixed
 - Package structure in `omnipytent.ext`.
