@@ -27,6 +27,10 @@ class TaskContext(object):
         return '<TaskContext: %s>' % self.task.name
 
     @property
+    def task_file(self):
+        return self._parent.task_file
+
+    @property
     def has_passed_data(self):
         return self.task in self._parent.dep_data
 
@@ -39,10 +43,7 @@ class TaskContext(object):
 
     @property
     def cache(self):
-        try:
-            return self._parent.task_file.tasks_cache[self.task.name]
-        except KeyError:
-            return self._parent.task_file.tasks_cache.setdefault(self.task.name, TaskCache())
+        return self.task_file.get_task_cache(self.task)
 
     @property
     def is_main(self):
@@ -50,7 +51,7 @@ class TaskContext(object):
 
     @property
     def task_dir(self):
-        return self._parent.task_file.tasks_dir
+        return self.task_file.tasks_dir
 
     proj_dir = task_dir
 
@@ -65,10 +66,6 @@ class TaskContext(object):
     @property
     def cur_dir(self):
         return self._parent.start_dir
-
-
-class TaskCache:
-    pass
 
 
 class DepDataFetcher:

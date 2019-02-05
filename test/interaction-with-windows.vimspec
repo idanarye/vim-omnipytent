@@ -84,4 +84,30 @@ Describe Window utils
 .
         OP baz
     End
+
+    It Window close subtask
+        CreateTasksfile
+        from omnipytent.util import other_windows
+
+        @task.window
+        def foo_window(ctx):
+            CMD.new()
+            CMD.file('foo')
+            VAR['w:baz'] = 0
+
+        @task
+        def bar(ctx, foo=foo_window):
+            with other_windows(foo):
+                VAR['w:baz'] += 1
+.
+        OP bar
+        Assert Equals(getwinvar(bufwinnr('foo'), 'baz'), 1)
+        OP bar
+        Assert Equals(getwinvar(bufwinnr('foo'), 'baz'), 2)
+        OP foo_window.close
+        Assert Equals(bufwinnr('foo'), -1)
+        OP bar
+        Assert Equals(getwinvar(bufwinnr('foo'), 'baz'), 1)
+        echo ' '
+    End
 End

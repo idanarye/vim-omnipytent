@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `CombineSources`
 - `score` for `CHOOSE` and for options tasks (`ctx.score`)
 - `Terminal.alive`
+- Subtasks:
+  - For options task - `<task>?` to print the choice and `<task>!` to clear it.
+  - For windows task - `<task>.close` to close the window.
 
 ### Fixed
 - Package structure in `omnipytent.ext`.

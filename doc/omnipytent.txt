@@ -23,6 +23,7 @@ Running tasks:               |:OP| |:OP2| |:OP3|
 Editing tasks:               |:OP2edit| |:OP3edit| |:OPvedit|
 Writing tasks:               |omnipytent-tasks-syntax|
                             |omnipytent-task-context-object|
+                            |omnipytent-subtasks|
 Configuration:               |g:omnipytent_defaultPythonVersion|
                             |g:omnipytent_filePrefix|
                             |g:omnipytent_projectRootMarkers|
@@ -631,12 +632,18 @@ You can invoke the options task directly to force a re-prompt, or you can
 invoke it with the desired option's caption as argument to set it(there is
 autocompletion for the option argument)
 
-An options task will always execute the function - even, when it remembers your
+An options task will always execute the function - even when it remembers your
 choice. If you want to disable that, and only execute the function when you
 invoke it directly, pass "cache_choice_value=True": >
     @task.options(cache_choice_value=True)
     def choose_stuff(ctx):
         # Gathering options, may take very long time to complete
+<
+
+You can print the current selection by appending "?" to the task name, and
+erase it by appending "!": >
+    OP compiler?
+    OP choose_stuff!
 <
 
                                           *omnipytent-options-generator-style*
@@ -780,6 +787,10 @@ them: >
         ctx.dep.open_shell << 'gcc main.c -o a.out'
 <
 
+You can close the window by appending ".close" to the task name: >
+    OP open_shell.close
+<
+
 TASK ALIASES                                         *omnipytent-task-aliases*
 
 You can add aliases to tasks using the "alias=" keyword argument. To add
@@ -906,6 +917,38 @@ An *omnipytent-completion-context-object* "ctx" contains:
 * "ctx.task_dir"    The directory where the task is defined.
 * "ctx.cur_dir"     The directory Vim was at when the task was invoked.
 * "ctx.file_dir"    The directory of the file that was opened at vim.
+
+
+SUBTASKS                                                  *omnipytent-subtasks*
+
+This is not very useful for handwritten tasks, but can be used by generated
+tasks. You can create a subtask by using the ".subtask" method of a task: >
+    @task
+    def foo(ctx):
+        pass
+
+    @foo.subtask
+    def bar(ctx):
+        pass
+
+    @foo.subtask('bazz')
+    def baz(ctx):
+        pass
+
+    @foo.subtask('@')
+    def qux(ctx):
+        pass
+<
+
+Then you can run the tasks with: >
+    OP foo.bar
+    OP foo.bazz
+    OP foo@
+<
+
+We run "bar" as a "member" of "foo". We do the same for "baz", but we set its
+name to "bazz" so we call it with that name. "qux" has a name that begins with
+a non-identifier character, so we don't use a dot when we call it.
 
 
 OTHER HELPERS              *omnipytent-other-helpers* *omnipytent-utils-module*

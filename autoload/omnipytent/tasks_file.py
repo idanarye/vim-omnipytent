@@ -15,7 +15,7 @@ class TasksFile:
     def __init__(self):
         self.filename = self.find_tasks_file(self.default_name())
         self.last_modified = None
-        self.tasks_cache = {}
+        self._tasks_cache = {}
 
     @staticmethod
     def find_tasks_file(filename):
@@ -119,17 +119,26 @@ class TasksFile:
             module_iteritems = self.module.__dict__.items()
         for ident, value in module_iteritems:
             if isinstance(value, Task):
-                self.tasks[ident] = value
-                for alias in value.aliases:
-                    self.tasks[alias] = value
+                for name, subtask in value.gen_self_with_subtasks(ident):
+                    self.tasks[name] = subtask
+                    for alias in subtask.aliases:
+                        self.tasks[alias] = subtask
         self.last_modified = os.path.getmtime(self.filename)
-        self.tasks_cache = self.tasks_cache
-        for key in list(self.tasks_cache.keys()):
+        self._tasks_cache = self._tasks_cache
+        for key in list(self._tasks_cache.keys()):
             if key not in self.tasks:
-                del self.tasks_cache[key]
+                del self._tasks_cache[key]
 
     def __getitem__(self, key):
         return self.tasks[key]
+
+    def get_task_cache(self, task):
+        if self[task.name] is not task:
+            raise TypeError("%r cannot use the cache - not the %r in the tasks file" % (task, task.name))
+        try:
+            return self._tasks_cache[task.name]
+        except KeyError:
+            return self._tasks_cache.setdefault(task.name, _TaskCache())
 
     @staticmethod
     def default_name():
@@ -190,3 +199,6 @@ def get_tasks_file():
         __last_tasks_file[0] = TasksFile()
     return __last_tasks_file[0]
 
+
+class _TaskCache:
+    pass

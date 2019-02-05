@@ -2,10 +2,11 @@ import inspect
 from collections import OrderedDict
 
 import vim
+import re
 
 from .context import InvocationContext
 from .hacks import function_locals
-from .util import input_list, other_windows, flatten_iterator, is_generator_callable
+from .util import other_windows, flatten_iterator, is_generator_callable
 
 
 _getargspec = getattr(inspect, 'getfullargspec', inspect.getargspec)
@@ -22,10 +23,11 @@ class Task(object):
                 kwargs[name] = self.dep._get_by_task(task)
             return kwargs
 
-    def __init__(self, func, alias=[]):
+    def __init__(self, func, alias=[], name=None):
         self.func = func
+        self._subtasks = {}
 
-        self.name = func.__name__
+        self.name = name or func.__name__
         try:
             argspec = _getargspec(func)
         except TypeError:
@@ -45,6 +47,22 @@ class Task(object):
             self.aliases = list(alias)
 
         self.__handle_special_args(argspec)
+
+    def subtask(self, name, alias=[]):
+        def inner(func):
+            self._subtasks[name] = Task(
+                func,
+                name=self._format_subtask_full_name(self.name, name),
+                alias=alias)
+
+        if isinstance(name, str):
+            return inner
+        elif callable(name):
+            func = name
+            name = func.__name__
+            inner(func)
+        else:
+            raise TypeError('Bad paramter for subtask %r' % (name,))
 
     def __handle_special_args(self, argspec):
         special_defaults = list(self.__split_special_defaults(argspec))
@@ -116,6 +134,24 @@ class Task(object):
             return result
         self.completers.append(completer)
 
+    __STARTS_WITH_WORD_CHARACTER_PATTERN = re.compile(r'^\w')
+
+    @classmethod
+    def _format_subtask_full_name(ctx, prefix, name):
+        if not prefix:
+            return name
+        elif ctx.__STARTS_WITH_WORD_CHARACTER_PATTERN.match(name):
+            return '%s.%s' % (prefix, name)
+        else:
+            return '%s%s' % (prefix, name)
+
+    def gen_self_with_subtasks(self, ident):
+        yield ident, self
+        for subtask_ident, subtask in self._subtasks.items():
+            subtask_ident = self._format_subtask_full_name(ident, subtask_ident)
+            for pair in subtask.gen_self_with_subtasks(ident=subtask_ident):
+                yield pair
+
 
 class OptionsTask(Task):
     MULTI = False
@@ -165,6 +201,29 @@ class OptionsTask(Task):
 
         self.complete(self.complete_options)
 
+        self.subtask('?')(self.print_choice)
+        self.subtask('!')(self.clear_choice)
+
+    def print_choice(self, ctx):
+        cache = ctx.task_file.get_task_cache(self)
+        try:
+            chosen_key = cache.chosen_key
+        except AttributeError:
+            print('%s has no selected value' % (self.name,))
+            return
+        print('Current choice for %s: %s' % (self.name, chosen_key))
+
+    def clear_choice(self, ctx):
+        cache = ctx.task_file.get_task_cache(self)
+        try:
+            del cache.chosen_key
+        except AttributeError:
+            pass
+        try:
+            del cache.chosen_value
+        except AttributeError:
+            pass
+
     def _varname_filter(self, target):
         return all([
             not target.startswith('_'),
@@ -210,8 +269,6 @@ class OptionsTask(Task):
 
     def invoke(self, ctx, *args):
         from .async_execution import CHOOSE
-        if False:
-            yield  # force this into a genrator
         ctx = ctx.for_task(self)
 
         if self._cache_choice_value and not ctx.is_main:
@@ -317,6 +374,10 @@ class OptionsTaskMulti(OptionsTask):
 
 
 class WindowTask(Task):
+    def __init__(self, *args, **kwargs):
+        super(WindowTask, self).__init__(*args, **kwargs)
+        self.subtask(self.close)
+
     def invoke(self, ctx, *args):
         task_ctx = ctx.for_task(self)
         try:
@@ -355,6 +416,20 @@ class WindowTask(Task):
             task_ctx.cache.passed_data = task_ctx.passed_data
         else:
             task_ctx.pass_data(window)
+
+    def close(self, ctx):
+        cache = ctx.task_file.get_task_cache(self)
+        try:
+            window = cache.window
+        except AttributeError:
+            return
+        if window.valid:
+            vim.command('%swincmd c' % window.number)
+        del cache.window
+        try:
+            del cache.pass_data
+        except AttributeError:
+            pass
 
 
 def invoke_with_dependencies(tasks_file, task, args):
