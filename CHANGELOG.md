@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Package structure in `omnipytent.ext`.
+- CtrlP selection UI with `fmt` and multiple entries that have the same `fmt`.
 
 ## 1.3.0 - 2018-11-16
 ### Added
