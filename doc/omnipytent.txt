@@ -189,6 +189,10 @@ tasks if you already have a tasks file, you can usually just use |:OP|.
 |:OP| expects the task's name as the first argument. If the task has arguments,
 they should be added as additional arguments to *:OP*.
 
+Invoking |:OP| with no arguments will open a selection UI for picking the task.
+Tasks with mandatory arguments cannot be picked that way (this may change in
+the future)
+
 Tasks will run in the directory of their tasks file - regardless of Vim's CWD
 at the moment of their invocation.
 
@@ -199,6 +203,7 @@ Omnipytent tasks are written in Python and reside in the tasks file. They look
 like this: >
     @task(dep1, dep2)
     def my_task(ctx, arg1, arg2, *args):
+        """Prints the arguments"""
         print('arg1 is %s' % arg1)
         print('arg2 is %s' % arg2)
         print('args is %s' % (args,))
@@ -218,6 +223,9 @@ Where:
 * tuple of all the remaining arguments passed to
   |:OP| after the task name and the regular arguments. It's members are all
   strings.
+* The doc string will appear in the preview of selection UIs that support the
+  preview feature when running |:OP| without arguments. Note that this specific
+  task will not appear, because it has mandatory arguments.
 
 We can run this task with: >
     OP my_task a b c d

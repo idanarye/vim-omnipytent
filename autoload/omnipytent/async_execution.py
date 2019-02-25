@@ -201,7 +201,10 @@ def __selection_ui_cls(selection_ui):
 
 
 def CHOOSE(source, multi=False, prompt=None, fmt=str, preview=None, score=None):
-    selection_ui = vim.vars.get('omnipytent_selectionUI') or __selection_ui()
+    try:
+        selection_ui = VAR['g:omnipytent_selectionUI']
+    except KeyError:
+        selection_ui = __selection_ui()
     selection_ui_cls = __selection_ui_cls(selection_ui)
 
     return selection_ui_cls(source=source, multi=multi, prompt=prompt, fmt=fmt, preview=preview, score=score)

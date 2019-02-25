@@ -23,17 +23,25 @@ class Task(object):
                 kwargs[name] = self.dep._get_by_task(task)
             return kwargs
 
-    def __init__(self, func, alias=[], name=None):
+    def __init__(self, func, alias=[], name=None, doc=None):
         self.func = func
         self._subtasks = {}
 
         self.name = name or func.__name__
+        self.doc = doc or func.__doc__
         try:
             argspec = _getargspec(func)
         except TypeError:
             argspec = _getargspec(func.__call__)
         self._task_ctx_arg_name = argspec.args[0] if argspec.args else None
-        self._task_args = argspec.args[1:]  # remove `ctx` from the list
+        if getattr(func, '__self__', None) is None:
+            self._task_args = argspec.args[1:]  # remove `ctx` from the list
+        else:
+            self._task_args = argspec.args[2:]  # remove `self`/`ctx` and `ctx` from the list
+        if argspec.defaults:
+            self._task_arg_defaults = dict(zip(self._task_args[-len(argspec.defaults):], argspec.defaults))
+        else:
+            self._task_arg_defaults = {}
         self._task_varargs = argspec.varargs
         self._special_args = OrderedDict()
 
@@ -48,12 +56,36 @@ class Task(object):
 
         self.__handle_special_args(argspec)
 
-    def subtask(self, name, alias=[]):
+    def gen_doc(self, tasks_file):
+        result = []
+
+        if False:  # TODO: Enable when allowing arguments in selection UI
+            def args():
+                for arg in self._task_args:
+                    if arg in self._task_arg_defaults:
+                        yield '[%s]' % arg
+                    else:
+                        yield arg
+                if self._task_varargs:
+                    yield '[%s...]' % self._task_varargs
+            args = ' '.join(args())
+            if args:
+                result.append('Arguments: ' + args)
+
+        deps = ', '.join(d.name for d in self.all_dependencies(tasks_file))
+        if deps:
+            result.append('Dependencies: ' + deps)
+
+        result.append(self.doc)
+        return '\n\n'.join(str(line) for line in result if line is not None)
+
+    def subtask(self, name, alias=[], doc=None):
         def inner(func):
             self._subtasks[name] = Task(
                 func,
                 name=self._format_subtask_full_name(self.name, name),
-                alias=alias)
+                alias=alias,
+                doc=doc)
 
         if isinstance(name, str):
             return inner
@@ -201,8 +233,8 @@ class OptionsTask(Task):
 
         self.complete(self.complete_options)
 
-        self.subtask('?')(self.print_choice)
-        self.subtask('!')(self.clear_choice)
+        self.subtask('?', doc='Print the current choice for the %r task' % self.name)(self.print_choice)
+        self.subtask('!', doc='Clear the choice for the %r task' % self.name)(self.clear_choice)
 
     def print_choice(self, ctx):
         cache = ctx.task_file.get_task_cache(self)
@@ -376,7 +408,7 @@ class OptionsTaskMulti(OptionsTask):
 class WindowTask(Task):
     def __init__(self, *args, **kwargs):
         super(WindowTask, self).__init__(*args, **kwargs)
-        self.subtask(self.close)
+        self.subtask(self.close, doc='Close the window opened by the %r task' % self.name)
 
     def invoke(self, ctx, *args):
         task_ctx = ctx.for_task(self)
@@ -449,3 +481,19 @@ def invoke_with_dependencies(tasks_file, task, args):
                 already_invoked.add(task)
                 for yielded in task.invoke(ctx, *args):
                     yield yielded
+
+
+def prompt_and_invoke_with_dependencies(tasks_file):
+    from .async_execution import CHOOSE
+    pickable_tasks = ((k, v) for (k, v) in tasks_file.tasks.items()
+                      if len(v._task_arg_defaults) == len(v._task_args))
+    choose = CHOOSE(
+        pickable_tasks,
+        fmt=lambda p: p[0],
+        preview=lambda p: p[1].gen_doc(tasks_file),
+    )
+    yield choose
+    task = choose._returned_value[1]
+
+    for yielded in invoke_with_dependencies(tasks_file, task, []):
+        yield yielded
