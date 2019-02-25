@@ -483,17 +483,31 @@ def invoke_with_dependencies(tasks_file, task, args):
                     yield yielded
 
 
+__MRU_ACTION_NAMES = []
+
+
 def prompt_and_invoke_with_dependencies(tasks_file):
     from .async_execution import CHOOSE
     pickable_tasks = ((k, v) for (k, v) in tasks_file.tasks.items()
                       if len(v._task_arg_defaults) == len(v._task_args))
+
+    last_actions_indices = {n: i for i, n in enumerate(__MRU_ACTION_NAMES)}
+    print(last_actions_indices)
+
     choose = CHOOSE(
         pickable_tasks,
         fmt=lambda p: p[0],
         preview=lambda p: p[1].gen_doc(tasks_file),
+        score=lambda p: last_actions_indices.get(p[0], -1),
     )
     yield choose
     task = choose._returned_value[1]
+    task_name = choose._returned_value[0]
+    if task_name in last_actions_indices:
+        __MRU_ACTION_NAMES.remove(task_name)
+    __MRU_ACTION_NAMES.append(choose._returned_value[0])
+    while 20 < len(__MRU_ACTION_NAMES):
+        __MRU_ACTION_NAMES.pop(0)
 
     for yielded in invoke_with_dependencies(tasks_file, task, []):
         yield yielded
