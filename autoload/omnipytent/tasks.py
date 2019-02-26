@@ -103,6 +103,8 @@ class Task(object):
             self._special_args.update(zip(special_args, special_defaults))
             assert special_args == self._task_args[-len(special_args):]
             self._task_args = self._task_args[:-len(special_args)]
+            for arg in special_args:
+                del self._task_arg_defaults[arg]
         if getattr(argspec, 'kwonlydefaults', None):
             for k, v in argspec.kwonlydefaults.items():
                 if not self.__is_default_special(v):
