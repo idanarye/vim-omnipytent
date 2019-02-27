@@ -494,7 +494,6 @@ def prompt_and_invoke_with_dependencies(tasks_file):
                       if len(v._task_arg_defaults) == len(v._task_args))
 
     last_actions_indices = {n: i for i, n in enumerate(__MRU_ACTION_NAMES)}
-    print(last_actions_indices)
 
     choose = CHOOSE(
         pickable_tasks,
