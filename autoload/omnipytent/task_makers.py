@@ -14,9 +14,9 @@ class CombineSources(TaskMaker):
     def set_sources(self, *sources):
         self.sources = sources
 
-    def all_dependencies(self, tasks_file):
+    def all_dependencies(self):
         for source in self.sources:
-            for dependency in source.all_dependencies(tasks_file):
+            for dependency in source.all_dependencies():
                 yield dependency
 
     def modify_task(self, task):
