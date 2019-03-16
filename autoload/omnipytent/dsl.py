@@ -38,7 +38,9 @@ class TaskDeclarator:
         elif func.__code__.co_flags & inspect.CO_VARARGS:
             pass  # has varargs - can count as first argument
         else:
+            name = func.__name__
             func = staticmethod(func)
+            func.__name__ = name
 
         result = type(self._task_class)(
             func.__name__,

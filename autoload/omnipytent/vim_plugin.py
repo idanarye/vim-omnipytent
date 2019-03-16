@@ -82,4 +82,3 @@ def _api_complete(include_task_args):
         if not include_task_args:
             return []
         return ctx.task.completions(ctx)
-

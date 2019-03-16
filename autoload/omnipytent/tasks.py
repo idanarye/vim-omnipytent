@@ -103,12 +103,13 @@ class Task(BaseTask):
             result.update(completer(ctx))
         return sorted(result)
 
-    def complete(self, func):
+    @classmethod
+    def complete(cls, func):
         def completer(ctx):
             result = func(ctx)
             result = (item for item in result if item.startswith(ctx.arg_prefix))
             return result
-        self.completers.append(completer)
+        cls.completers.append(completer)
 
     __STARTS_WITH_WORD_CHARACTER_PATTERN = re.compile(r'^\w')
 
@@ -133,51 +134,50 @@ class Task(BaseTask):
 class OptionsTask(Task):
     MULTI = False
 
-    # class TaskContext(Task.TaskContext):
-        # _key = None
-        # _value = staticmethod(lambda v: v)
-        # _preview = None
-        # _score = None
+    _key = None
+    _value = staticmethod(lambda v: v)
+    _preview = None
+    _score = None
 
-        # def key(self, key):
-            # self._key = key
+    def key(self, key):
+        self._key = key
 
-        # def value(self, value):
-            # self._value = value
+    def value(self, value):
+        self._value = value
 
-        # def preview(self, preview):
-            # self._preview = preview
+    def preview(self, preview):
+        self._preview = preview
 
-        # def score(self, score):
-            # self._score = score
+    def score(self, score):
+        self._score = score
 
-        # @property
-        # def _chosen_key(self):
-            # return getattr(self.cache, 'chosen_key', None)
+    @property
+    def _chosen_key(self):
+        return getattr(self.cache, 'chosen_key', None)
 
-        # def _should_repick(self, options):
-            # if self.is_main:
-                # return True
-            # return self._chosen_key not in options
+    def _should_repick(self, options):
+        if self.is_main:
+            return True
+        return self._chosen_key not in options
 
-        # def _pass_choice(self, options, chosen_key):
-            # value = options.get(chosen_key, None)
-            # value = self._value(value)
-            # self.pass_data(value)
-            # return value
+    def _pass_choice(self, options, chosen_key):
+        value = options.get(chosen_key, None)
+        value = self._value(value)
+        self.pass_data(value)
+        return value
 
-        # def _pass_from_arguments(self, options, args):
-            # pass
+    def _pass_from_arguments(self, options, args):
+        pass
 
     # def __init__(self, func, cache_choice_value=False, **kwargs):
+    cache_choice_value = False
+
     @classmethod
     def _cls_init_(cls):
-        # self._cache_choice_value = cache_choice_value
-
         if 1 < len(cls._task_args):
-            raise Exception('Options task %s should have 0 or 1 arg' % self)
+            raise Exception('Options task %s should have 0 or 1 arg' % cls)
 
-        # self.complete(self.complete_options)
+        cls.complete(cls.complete_options)
 
         # self.subtask('?', doc='Print the current choice for the %r task' % self.__name__)(self.print_choice)
         # self.subtask('!', doc='Clear the choice for the %r task' % self.__name__)(self.clear_choice)
@@ -211,44 +211,39 @@ class OptionsTask(Task):
         ])
 
     def _gen_keys_for_completion(self, cctx):
-        if not is_generator_callable(self.func):
-            for name in self.func.__code__.co_varnames:
+        if not is_generator_callable(self._func_):
+            for name in self._func_.__code__.co_varnames:
                 if self._varname_filter(name):
                     yield name
             return
 
         ictx = InvocationContext(cctx.tasks_file, self)
-        tctx = ictx.for_task(self)
-        for key in self._resolve_options(tctx).keys():
+        for key in self._resolve_options().keys():
             yield key
 
-    def complete_options(self, ctx):
+    @classmethod
+    def complete_options(cls, ctx):
         if 0 == ctx.arg_index:
-            return self._gen_keys_for_completion(ctx)
+            return ctx.task._gen_keys_for_completion(ctx)
         else:
             return []
 
-    def _resolve_options(self, ctx):
-        if self._task_ctx_arg_name:
-            args = (ctx,)
-        else:
-            args = ()
-
-        if not is_generator_callable(self.func):
-            result = function_locals(self.func, *args, **ctx._kwargs_for_func)
+    def _resolve_options(self):
+        if not is_generator_callable(self._func_):
+            result = function_locals(self._func_, **self._kwargs_for_func)
             for special_arg in self._special_args.keys():
                 result.pop(special_arg, None)
             return result
 
-        items = list(self.func(*args, **ctx._kwargs_for_func))
-        if not ctx._key:
-            raise Exception('ctx.key not set for generator-based options task')
-        return OrderedDict((str(ctx._key(item)), item) for item in items)
+        items = list(self._func_(**self._kwargs_for_func))
+        if not self._key:
+            raise Exception('key not set for generator-based options task')
+        return OrderedDict((str(self._key(item)), item) for item in items)
 
     def invoke(self, *args):
         from .async_execution import CHOOSE
 
-        if self._cache_choice_value and not self.is_main:
+        if self.cache_choice_value and not self.is_main:
             try:
                 chosen_value = self.cache.chosen_value
             except AttributeError:
@@ -257,7 +252,7 @@ class OptionsTask(Task):
                 self.pass_data(chosen_value)
                 return
 
-        options = self._resolve_options(self)
+        options = self._resolve_options()
 
         if 0 == len(args) or not self.is_main:
             if self._should_repick(options):  # includes the possibility that chosen_key is None
@@ -267,7 +262,7 @@ class OptionsTask(Task):
                 elif 1 == len(options):
                     single_key, = options.keys()
                     single_value = self._pass_choice(options, single_key)
-                    if self._cache_choice_value:
+                    if self.cache_choice_value:
                         self.cache.chosen_value = single_value
                     return
                 if self._preview:
@@ -288,7 +283,7 @@ class OptionsTask(Task):
                 if chosen_key:
                     self.cache.chosen_key = chosen_key
                     chosen_value = self._pass_choice(options, chosen_key)
-                    if self._cache_choice_value:
+                    if self.cache_choice_value:
                         self.cache.chosen_value = chosen_value
             else:
                 chosen_key = self._chosen_key
@@ -302,7 +297,7 @@ class OptionsTask(Task):
             chosen_key = args[0]
             if self._varname_filter(chosen_key) and chosen_key in options:
                 ctx.cache.chosen_key = chosen_key
-                if self._cache_choice_value:
+                if self.cache_choice_value:
                     ctx.cache.chosen_value = options[chosen_key]
                 ctx.pass_data(options[chosen_key])
             else:
@@ -314,24 +309,24 @@ class OptionsTask(Task):
 class OptionsTaskMulti(OptionsTask):
     MULTI = True
 
-    # class TaskContext(OptionsTask.TaskContext):
-        # def _should_repick(self, options):
-            # if self.is_main:
-                # return True
-            # if not self._chosen_key:
-                # return True
-            # return not set(self._chosen_key).issubset(options)
+    def _should_repick(self, options):
+        if self.is_main:
+            return True
+        if not self._chosen_key:
+            return True
+        return not set(self._chosen_key).issubset(options)
 
-        # def _pass_choice(self, options, chosen_key):
-            # values = map(options.get, chosen_key)
-            # values = map(self._value, values)
-            # values = list(values)
-            # self.pass_data(values)
-            # return values
+    def _pass_choice(self, options, chosen_key):
+        values = map(options.get, chosen_key)
+        values = map(self._value, values)
+        values = list(values)
+        self.pass_data(values)
+        return values
 
-    def complete_options(self, ctx):
+    @classmethod
+    def complete_options(cls, ctx):
         already_picked = set(ctx.prev_args)
-        return [key for key in self._gen_keys_for_completion(ctx)
+        return [key for key in ctx.task._gen_keys_for_completion(ctx)
                 if key not in already_picked]
 
     def _pass_from_arguments(self, ctx, options, args):

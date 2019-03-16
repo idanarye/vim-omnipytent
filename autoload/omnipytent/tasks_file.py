@@ -133,12 +133,12 @@ class TasksFile:
         return self.tasks[key]
 
     def get_task_cache(self, task):
-        if self[task.name] is not task:
-            raise TypeError("%r cannot use the cache - not the %r in the tasks file" % (task, task.name))
+        if self[task.__name__] is not task:
+            raise TypeError("%r cannot use the cache - not the %r in the tasks file" % (task, task.__name__))
         try:
-            return self._tasks_cache[task.name]
+            return self._tasks_cache[task.__name__]
         except KeyError:
-            return self._tasks_cache.setdefault(task.name, _TaskCache())
+            return self._tasks_cache.setdefault(task.__name__, _TaskCache())
 
     @staticmethod
     def default_name():

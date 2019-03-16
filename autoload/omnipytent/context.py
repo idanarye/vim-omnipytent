@@ -109,8 +109,10 @@ class CompletionContext:
                        cmd_line=cmd_line,
                        cursor_pos=cursor_pos)
         else:
+            task = tasks_file[parts[1]]
+            invocation_context = InvocationContext(tasks_file, task)
             return cls(tasks_file=tasks_file,
-                       task=tasks_file[parts[1]],
+                       task=task(invocation_context),
                        arg_index=len(parts) - 3,
                        arg_prefix=parts[-1],
                        prev_args=parts[2:-1],
