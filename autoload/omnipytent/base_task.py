@@ -1,6 +1,7 @@
 import inspect
 import os
 from collections import OrderedDict
+import re
 
 from .util import flatten_iterator
 
@@ -9,8 +10,10 @@ _getargspec = getattr(inspect, 'getfullargspec', inspect.getargspec)
 
 class TaskMeta(type):
     def __new__(mcs, name, bases, dct):
+        dct.setdefault('_CONCRETE_', True)
         dct.setdefault('dependencies', [])
         dct.setdefault('completers', [])
+        dct.setdefault('alias', [])
 
         cls = super(TaskMeta, mcs).__new__(mcs, name, bases, dct)
 
@@ -34,7 +37,7 @@ class TaskMeta(type):
         cls._special_args = OrderedDict()
 
         # if not alias:
-        cls.aliases = []
+        cls.alias = []
         # elif isinstance(alias, str):
         # cls.aliases = alias.split()
         # else:
@@ -44,6 +47,20 @@ class TaskMeta(type):
 
         cls._cls_init_()
         return cls
+
+    @property
+    def aliases(cls):
+        try:
+            alias = cls.alias
+        except AttributeError:
+            return []
+        else:
+            if isinstance(alias, str):
+                return [alias]
+            elif hasattr(alias, '__iter__'):
+                return list(alias)
+            else:
+                return [alias]
 
     def __handle_special_args(self, argspec):
         special_defaults = list(self.__split_special_defaults(argspec))
@@ -74,17 +91,15 @@ class TaskMeta(type):
 
     @classmethod
     def __is_default_special(cls, default):
-        return isinstance(default, type) and issubclass(default, BaseTask)
+        return isinstance(default, type) and issubclass(default, Task)
 
 
-class BaseTask(object):
+class Task(object):
+    _CONCRETE_ = False
+
     @classmethod
     def _cls_init_(cls):
-        pass
-
-    @classmethod
-    def _is_concrete_(cls):
-        return True
+        """Override to initialize the task class"""
 
     @classmethod
     def all_dependencies(cls):
@@ -92,6 +107,60 @@ class BaseTask(object):
             yield dependency
         for dependency in cls._special_args.values():
             yield dependency
+
+    @classmethod
+    def subtask(cls, name, alias=[], doc=None):
+        def inner(func):
+            cls._subtasks[name] = type(Task)(
+                cls._format_subtask_full_name(cls.__name__, name),
+                (Task,),
+                dict(
+                    _func_=func,
+                    alias=alias,
+                    __doc__=doc,
+                ))
+
+        if isinstance(name, str):
+            return inner
+        elif callable(name):
+            func = name
+            name = func.__name__
+            inner(func)
+        else:
+            raise TypeError('Bad paramter for subtask %r' % (name,))
+
+    def completions(self, ctx):
+        result = set()
+        for completer in self.completers:
+            result.update(completer(ctx))
+        return sorted(result)
+
+    @classmethod
+    def complete(cls, func):
+        def completer(ctx):
+            result = func(ctx)
+            result = (item for item in result if item.startswith(ctx.arg_prefix))
+            return result
+        cls.completers.append(completer)
+
+    __STARTS_WITH_WORD_CHARACTER_PATTERN = re.compile(r'^\w')
+
+    @classmethod
+    def _format_subtask_full_name(ctx, prefix, name):
+        if not prefix:
+            return name
+        elif ctx.__STARTS_WITH_WORD_CHARACTER_PATTERN.match(name):
+            return '%s.%s' % (prefix, name)
+        else:
+            return '%s%s' % (prefix, name)
+
+    @classmethod
+    def gen_self_with_subtasks(cls, ident):
+        yield ident, cls
+        for subtask_ident, subtask in cls._subtasks.items():
+            subtask_ident = cls._format_subtask_full_name(ident, subtask_ident)
+            for pair in subtask.gen_self_with_subtasks(ident=subtask_ident):
+                yield pair
 
     def __init__(self, invocation_context):
         self.invocation_context = invocation_context
@@ -129,8 +198,32 @@ class BaseTask(object):
     def _func_(self):
         pass
 
+    def gen_doc(self, tasks_file):
+        result = []
+
+        if False:  # TODO: Enable when allowing arguments in selection UI
+            def args():
+                for arg in self._task_args:
+                    if arg in self._task_arg_defaults:
+                        yield '[%s]' % arg
+                    else:
+                        yield arg
+                if self._task_varargs:
+                    yield '[%s...]' % self._task_varargs
+            args = ' '.join(args())
+            if args:
+                result.append('Arguments: ' + args)
+
+        deps = ', '.join(d.__name__ for d in self.all_dependencies())
+        if deps:
+            result.append('Dependencies: ' + deps)
+
+        result.append(self.doc)
+        return '\n\n'.join(str(line) for line in result if line is not None)
+
     def __repr__(self):
-        return '<TaskContext: %s>' % self.task.__name__
+        # return '<TaskContext: %s>' % self.task.__name__
+        return '<Task: %s>' % self.__name__
 
     @property
     def task_file(self):
@@ -174,7 +267,7 @@ class BaseTask(object):
         return self.invocation_context.start_dir
 
 
-BaseTask = TaskMeta(BaseTask.__name__, BaseTask.__bases__, dict(BaseTask.__dict__))
+Task = TaskMeta(Task.__name__, Task.__bases__, dict(Task.__dict__))
 
 
 class DepDataFetcher:

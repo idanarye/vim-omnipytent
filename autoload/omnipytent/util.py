@@ -5,6 +5,7 @@ import json
 import re
 import os.path
 import inspect
+import functools
 
 
 class RawVim(str):
@@ -233,3 +234,11 @@ def is_generator_callable(obj):
         return False
     else:
         return inspect.isgeneratorfunction(call)
+
+
+def bare_func_wrapper(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper

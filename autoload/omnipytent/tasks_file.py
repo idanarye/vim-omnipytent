@@ -118,7 +118,7 @@ class TasksFile:
         except AttributeError:
             module_iteritems = self.module.__dict__.items()
         for ident, value in module_iteritems:
-            if isinstance(value, type) and issubclass(value, Task) and value._is_concrete_():
+            if isinstance(value, type) and issubclass(value, Task) and value._CONCRETE_:
                 for name, subtask in value.gen_self_with_subtasks(ident):
                     self.tasks[name] = subtask
                     for alias in subtask.aliases:

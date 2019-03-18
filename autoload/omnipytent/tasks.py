@@ -2,24 +2,20 @@ import inspect
 from collections import OrderedDict
 
 import vim
-import re
 
-from .base_task import BaseTask
+from .base_task import Task
 from .context import InvocationContext
 from .hacks import function_locals
-from .util import other_windows, flatten_iterator, is_generator_callable
+from .util import other_windows, is_generator_callable, bare_func_wrapper
 
 
-_getargspec = getattr(inspect, 'getfullargspec', inspect.getargspec)
-
-
-class Task(BaseTask):
-    @property
-    def _kwargs_for_func(self):
-        kwargs = {}
-        for name, task in self._special_args.items():
-            kwargs[name] = self.dep._get_by_task(task)
-        return kwargs
+# class Task(BaseTask):
+    # @property
+    # def _kwargs_for_func(self):
+        # kwargs = {}
+        # for name, task in self._special_args.items():
+            # kwargs[name] = self.dep._get_by_task(task)
+        # return kwargs
 
     # def _init__(self, func, alias=[], name=None, doc=None):
         # self.func = func
@@ -54,84 +50,10 @@ class Task(BaseTask):
 
         # self.__handle_special_args(argspec)
 
-    def gen_doc(self, tasks_file):
-        result = []
-
-        if False:  # TODO: Enable when allowing arguments in selection UI
-            def args():
-                for arg in self._task_args:
-                    if arg in self._task_arg_defaults:
-                        yield '[%s]' % arg
-                    else:
-                        yield arg
-                if self._task_varargs:
-                    yield '[%s...]' % self._task_varargs
-            args = ' '.join(args())
-            if args:
-                result.append('Arguments: ' + args)
-
-        deps = ', '.join(d.__name__ for d in self.all_dependencies())
-        if deps:
-            result.append('Dependencies: ' + deps)
-
-        result.append(self.doc)
-        return '\n\n'.join(str(line) for line in result if line is not None)
-
-    def subtask(self, name, alias=[], doc=None):
-        def inner(func):
-            self._subtasks[name] = Task(
-                func,
-                name=self._format_subtask_full_name(self.__name__, name),
-                alias=alias,
-                doc=doc)
-
-        if isinstance(name, str):
-            return inner
-        elif callable(name):
-            func = name
-            name = func.__name__
-            inner(func)
-        else:
-            raise TypeError('Bad paramter for subtask %r' % (name,))
-
-    def __repr__(self):
-        return '<Task: %s>' % self.__name__
-
-    def completions(self, ctx):
-        result = set()
-        for completer in self.completers:
-            result.update(completer(ctx))
-        return sorted(result)
-
-    @classmethod
-    def complete(cls, func):
-        def completer(ctx):
-            result = func(ctx)
-            result = (item for item in result if item.startswith(ctx.arg_prefix))
-            return result
-        cls.completers.append(completer)
-
-    __STARTS_WITH_WORD_CHARACTER_PATTERN = re.compile(r'^\w')
-
-    @classmethod
-    def _format_subtask_full_name(ctx, prefix, name):
-        if not prefix:
-            return name
-        elif ctx.__STARTS_WITH_WORD_CHARACTER_PATTERN.match(name):
-            return '%s.%s' % (prefix, name)
-        else:
-            return '%s%s' % (prefix, name)
-
-    @classmethod
-    def gen_self_with_subtasks(cls, ident):
-        yield ident, cls
-        for subtask_ident, subtask in cls._subtasks.items():
-            subtask_ident = cls._format_subtask_full_name(ident, subtask_ident)
-            for pair in subtask.gen_self_with_subtasks(ident=subtask_ident):
-                yield pair
-
 
 class OptionsTask(Task):
+    _CONCRETE_ = False
+
     MULTI = False
 
     _key = None
@@ -174,6 +96,9 @@ class OptionsTask(Task):
 
     @classmethod
     def _cls_init_(cls):
+        if not cls._CONCRETE_:
+            return
+
         if 1 < len(cls._task_args):
             raise Exception('Options task %s should have 0 or 1 arg' % cls)
 
@@ -307,6 +232,8 @@ class OptionsTask(Task):
 
 
 class OptionsTaskMulti(OptionsTask):
+    _CONCRETE_ = False
+
     MULTI = True
 
     def _should_repick(self, options):
@@ -346,51 +273,59 @@ class OptionsTaskMulti(OptionsTask):
 
 
 class WindowTask(Task):
-    def __init__(self, *args, **kwargs):
-        super(WindowTask, self).__init__(*args, **kwargs)
-        self.subtask(self.close, doc='Close the window opened by the %r task' % self.__name__)
+    _CONCRETE_ = False
 
-    def invoke(self, ctx, *args):
-        task_ctx = ctx.for_task(self)
+    @classmethod
+    def _cls_init_(cls):
+        if not cls._CONCRETE_:
+            return
+
+        cls.subtask(bare_func_wrapper(cls.close), doc='Close the window opened by the %r task' % cls.__name__)
+    # def __init__(self, *args, **kwargs):
+        # super(WindowTask, self).__init__(*args, **kwargs)
+        # self.subtask(self.close, doc='Close the window opened by the %r task' % self.__name__)
+
+    def invoke(self, *args):
         try:
-            window = task_ctx.cache.window
+            window = self.cache.window
         except AttributeError:
             pass
         else:
             if window.valid:
-                if task_ctx.is_main:
+                if self.is_main:
                     with other_windows(window):
                         vim.command('bdelete!')
                 else:
                     try:
-                        passed_data = task_ctx.cache.passed_data
+                        passed_data = self.cache.passed_data
                     except AttributeError:
-                        task_ctx.pass_data(window)
+                        self.pass_data(window)
                     else:
-                        task_ctx.pass_data(passed_data)
+                        self.pass_data(passed_data)
                     return
 
         try:
-            del task_ctx.cache.window
+            del self.cache.window
         except AttributeError:
             pass
         try:
-            del task_ctx.cache.pass_data
+            del self.cache.pass_data
         except AttributeError:
             pass
 
         with other_windows():
-            for yielded in super(WindowTask, self).invoke(ctx, *args):
+            for yielded in super(WindowTask, self).invoke(*args):
                 yield yielded
             window = vim.current.window
-        task_ctx.cache.window = window
-        if task_ctx.has_passed_data:
-            task_ctx.cache.passed_data = task_ctx.passed_data
+        self.cache.window = window
+        if self.has_passed_data:
+            self.cache.passed_data = self.passed_data
         else:
-            task_ctx.pass_data(window)
+            self.pass_data(window)
 
-    def close(self, ctx):
-        cache = ctx.task_file.get_task_cache(self)
+    @classmethod
+    def close(cls, self):
+        cache = self.task_file.get_task_cache(cls)
         try:
             window = cache.window
         except AttributeError:
