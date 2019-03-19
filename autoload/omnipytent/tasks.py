@@ -80,16 +80,41 @@ class OptionsTask(Task):
     def _should_repick(self, options):
         if self.is_main:
             return True
-        return self._chosen_key not in options
+        if self.MULTI:
+            if not self._chosen_key:
+                return True
+            return not set(self._chosen_key).issubset(options)
+        else:
+            return self._chosen_key not in options
 
     def _pass_choice(self, options, chosen_key):
-        value = options.get(chosen_key, None)
-        value = self._value(value)
-        self.pass_data(value)
-        return value
+        if self.MULTI:
+            values = map(options.get, chosen_key)
+            values = map(self._value, values)
+            values = list(values)
+            self.pass_data(values)
+            return values
+        else:
+            value = options.get(chosen_key, None)
+            value = self._value(value)
+            self.pass_data(value)
+            return value
 
     def _pass_from_arguments(self, options, args):
-        pass
+        if self.MULTI:
+            def generator():
+                dup = set()
+                for chosen_key in args:
+                    if chosen_key in dup:
+                        raise Exception('%s picked more than once' % (chosen_key,))
+                    elif self._varname_filter(chosen_key) and chosen_key in options:
+                        dup.add(chosen_key)
+                        yield chosen_key
+                    else:
+                        raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
+            chosen_key = list(generator())
+            self.cache.chosen_key = chosen_key
+            self._pass_choice(options, chosen_key)
 
     # def __init__(self, func, cache_choice_value=False, **kwargs):
     cache_choice_value = False
@@ -148,10 +173,15 @@ class OptionsTask(Task):
 
     @classmethod
     def complete_options(cls, ctx):
-        if 0 == ctx.arg_index:
-            return ctx.task._gen_keys_for_completion(ctx)
+        if cls.MULTI:
+            already_picked = set(ctx.prev_args)
+            return [key for key in ctx.task._gen_keys_for_completion(ctx)
+                    if key not in already_picked]
         else:
-            return []
+            if 0 == ctx.arg_index:
+                return ctx.task._gen_keys_for_completion(ctx)
+            else:
+                return []
 
     def _resolve_options(self):
         if not is_generator_callable(self._func_):
@@ -235,41 +265,6 @@ class OptionsTaskMulti(OptionsTask):
     _CONCRETE_ = False
 
     MULTI = True
-
-    def _should_repick(self, options):
-        if self.is_main:
-            return True
-        if not self._chosen_key:
-            return True
-        return not set(self._chosen_key).issubset(options)
-
-    def _pass_choice(self, options, chosen_key):
-        values = map(options.get, chosen_key)
-        values = map(self._value, values)
-        values = list(values)
-        self.pass_data(values)
-        return values
-
-    @classmethod
-    def complete_options(cls, ctx):
-        already_picked = set(ctx.prev_args)
-        return [key for key in ctx.task._gen_keys_for_completion(ctx)
-                if key not in already_picked]
-
-    def _pass_from_arguments(self, ctx, options, args):
-        def generator():
-            dup = set()
-            for chosen_key in args:
-                if chosen_key in dup:
-                    raise Exception('%s picked more than once' % (chosen_key,))
-                elif self._varname_filter(chosen_key) and chosen_key in options:
-                    dup.add(chosen_key)
-                    yield chosen_key
-                else:
-                    raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
-        chosen_key = list(generator())
-        ctx.cache.chosen_key = chosen_key
-        ctx._pass_choice(options, chosen_key)
 
 
 class WindowTask(Task):
@@ -385,3 +380,36 @@ def prompt_and_invoke_with_dependencies(tasks_file):
 
     for yielded in invoke_with_dependencies(tasks_file, task, []):
         yield yielded
+
+
+class CombineSources(OptionsTask):
+    _CONCRETE_ = False
+
+    @classmethod
+    def _cls_init_(cls):
+        if not cls._CONCRETE_:
+            return
+
+        if not hasattr(cls, 'sources'):
+            raise TypeError('No sources defined for %s' % cls)
+
+    def _func_(self):
+        for source in self.sources:
+            source = source(self.invocation_context)
+            for value in source._resolve_options().values():
+                yield source, value
+
+    def __redirector(self, target, item):
+        source, value = item
+        func = getattr(source, target)
+        if target == '_preview' and func is None:
+            return 'No preview for %s' % source.name
+        return func(value)
+
+    def _key(self, item):
+        return self.__redirector('_key', item)
+
+    def _value(self, item):
+        return self.__redirector('_value', item)
+
+    # TODO: - add `_score()`?

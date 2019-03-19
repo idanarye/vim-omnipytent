@@ -26,7 +26,6 @@ Describe Combine sources
         def should_be(ctx, target, cs=combined_sources):
             assert target == cs
 .
-
         OP combined_sources k1-1
         OP should_be v1-1
 
@@ -57,7 +56,7 @@ Describe Combine sources
             yield 4
 
         class combined_sources(CombineSources):
-            multi = True
+            MULTI = True
             sources = [source1, source2]
 
         @task(combined_sources)

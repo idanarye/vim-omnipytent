@@ -2,7 +2,7 @@ import types
 import inspect
 from functools import wraps
 
-from .tasks import Task, OptionsTask, WindowTask, OptionsTaskMulti
+from .tasks import Task, OptionsTask, WindowTask
 
 
 def _fluent(func):
@@ -74,7 +74,8 @@ class TaskDeclarator:
     @property
     @_fluent
     def options_multi(self):
-        self._task_class = OptionsTaskMulti
+        self._task_class = OptionsTask
+        self._params['MULTI'] = True
 
     @property
     @_fluent
