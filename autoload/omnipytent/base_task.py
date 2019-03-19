@@ -37,7 +37,7 @@ class TaskMeta(type):
         cls._special_args = OrderedDict()
 
         # if not alias:
-        cls.alias = []
+        # cls.alias = []
         # elif isinstance(alias, str):
         # cls.aliases = alias.split()
         # else:
@@ -56,11 +56,9 @@ class TaskMeta(type):
             return []
         else:
             if isinstance(alias, str):
-                return [alias]
-            elif hasattr(alias, '__iter__'):
-                return list(alias)
+                return alias.split()
             else:
-                return [alias]
+                return list(alias)
 
     def __handle_special_args(self, argspec):
         special_defaults = list(self.__split_special_defaults(argspec))
