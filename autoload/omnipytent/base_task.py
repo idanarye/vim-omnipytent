@@ -100,6 +100,11 @@ class Task(object):
         """Override to initialize the task class"""
 
     @classmethod
+    def get_definition_location(cls):
+        code = cls._func_.__code__
+        return code.co_filename, code.co_firstlineno
+
+    @classmethod
     def all_dependencies(cls):
         for dependency in cls.dependencies:
             yield dependency

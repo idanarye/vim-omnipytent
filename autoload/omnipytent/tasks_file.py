@@ -74,8 +74,8 @@ class TasksFile:
                     self.load()
                 try:
                     task = self.tasks[on_task]
-                    line = task.func.__code__.co_firstlineno
-                    vim.command('edit %s' % self.filename)
+                    filename, line = task.get_definition_location()
+                    vim.command('edit %s' % filename)
                     vim.command(str(line))
                 except KeyError:
                     self._create_task_in_current_buffer(on_task)
