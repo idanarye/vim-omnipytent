@@ -231,7 +231,6 @@ class Task(object):
         return '\n\n'.join(str(line) for line in result if line is not None)
 
     def __repr__(self):
-        # return '<TaskContext: %s>' % self.task.__name__
         return '<Task: %s>' % self.__name__
 
     @property

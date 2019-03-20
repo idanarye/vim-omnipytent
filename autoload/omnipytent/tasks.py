@@ -9,48 +9,6 @@ from .hacks import function_locals
 from .util import other_windows, is_generator_callable, bare_func_wrapper
 
 
-# class Task(BaseTask):
-    # @property
-    # def _kwargs_for_func(self):
-        # kwargs = {}
-        # for name, task in self._special_args.items():
-            # kwargs[name] = self.dep._get_by_task(task)
-        # return kwargs
-
-    # def _init__(self, func, alias=[], name=None, doc=None):
-        # self.func = func
-        # self._subtasks = {}
-
-        # self.name = name or func.__name__
-        # self.doc = doc or func.__doc__
-        # try:
-            # argspec = _getargspec(func)
-        # except TypeError:
-            # argspec = _getargspec(func.__call__)
-        # self._task_ctx_arg_name = argspec.args[0] if argspec.args else None
-        # if getattr(func, '__self__', None) is None:
-            # self._task_args = argspec.args[1:]  # remove `ctx` from the list
-        # else:
-            # self._task_args = argspec.args[2:]  # remove `self`/`ctx` and `ctx` from the list
-        # if argspec.defaults:
-            # self._task_arg_defaults = dict(zip(self._task_args[-len(argspec.defaults):], argspec.defaults))
-        # else:
-            # self._task_arg_defaults = {}
-        # self._task_varargs = argspec.varargs
-        # self._special_args = OrderedDict()
-
-        # self.dependencies = []
-        # self.completers = []
-        # if not alias:
-            # self.aliases = []
-        # elif isinstance(alias, str):
-            # self.aliases = alias.split()
-        # else:
-            # self.aliases = list(alias)
-
-        # self.__handle_special_args(argspec)
-
-
 class OptionsTask(Task):
     _CONCRETE_ = False
 
@@ -100,7 +58,6 @@ class OptionsTask(Task):
             self.pass_data(value)
             return value
 
-    # def __init__(self, func, cache_choice_value=False, **kwargs):
     cache_choice_value = False
 
     @classmethod
@@ -275,9 +232,6 @@ class WindowTask(Task):
             return
 
         cls.subtask(bare_func_wrapper(cls.close), doc='Close the window opened by the %r task' % cls.__name__)
-    # def __init__(self, *args, **kwargs):
-        # super(WindowTask, self).__init__(*args, **kwargs)
-        # self.subtask(self.close, doc='Close the window opened by the %r task' % self.__name__)
 
     def invoke(self, *args):
         try:
