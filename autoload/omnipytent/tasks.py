@@ -70,20 +70,22 @@ class OptionsTask(Task):
 
         cls.complete(cls.complete_options)
 
-        # self.subtask('?', doc='Print the current choice for the %r task' % self.__name__)(self.print_choice)
-        # self.subtask('!', doc='Clear the choice for the %r task' % self.__name__)(self.clear_choice)
+        cls.subtask('?', doc='Print the current choice for the %r task' % cls.__name__)(bare_func_wrapper(cls.print_choice))
+        cls.subtask('!', doc='Clear the choice for the %r task' % cls.__name__)(bare_func_wrapper(cls.clear_choice))
 
-    def print_choice(self, ctx):
-        cache = ctx.task_file.get_task_cache(self)
+    @classmethod
+    def print_choice(cls, self):
+        cache = self.task_file.get_task_cache(cls)
         try:
             chosen_key = cache.chosen_key
         except AttributeError:
-            print('%s has no selected value' % (self.__name__,))
+            print('%s has no selected value' % (cls.__name__,))
             return
-        print('Current choice for %s: %s' % (self.__name__, chosen_key))
+        print('Current choice for %s: %s' % (cls.__name__, chosen_key))
 
-    def clear_choice(self, ctx):
-        cache = ctx.task_file.get_task_cache(self)
+    @classmethod
+    def clear_choice(cls, self):
+        cache = self.task_file.get_task_cache(cls)
         try:
             del cache.chosen_key
         except AttributeError:
