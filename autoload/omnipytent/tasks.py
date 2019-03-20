@@ -100,22 +100,6 @@ class OptionsTask(Task):
             self.pass_data(value)
             return value
 
-    def _pass_from_arguments(self, options, args):
-        if self.MULTI:
-            def generator():
-                dup = set()
-                for chosen_key in args:
-                    if chosen_key in dup:
-                        raise Exception('%s picked more than once' % (chosen_key,))
-                    elif self._varname_filter(chosen_key) and chosen_key in options:
-                        dup.add(chosen_key)
-                        yield chosen_key
-                    else:
-                        raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
-            chosen_key = list(generator())
-            self.cache.chosen_key = chosen_key
-            self._pass_choice(options, chosen_key)
-
     # def __init__(self, func, cache_choice_value=False, **kwargs):
     cache_choice_value = False
 
@@ -248,17 +232,32 @@ class OptionsTask(Task):
             self._pass_from_arguments(self, options, args)
 
     def _pass_from_arguments(self, ctx, options, args):
-        if 1 == len(args):
-            chosen_key = args[0]
-            if self._varname_filter(chosen_key) and chosen_key in options:
-                ctx.cache.chosen_key = chosen_key
-                if self.cache_choice_value:
-                    ctx.cache.chosen_value = options[chosen_key]
-                ctx.pass_data(options[chosen_key])
-            else:
-                raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
+        if self.MULTI:
+            def generator():
+                dup = set()
+                for chosen_key in args:
+                    if chosen_key in dup:
+                        raise Exception('%s picked more than once' % (chosen_key,))
+                    elif self._varname_filter(chosen_key) and chosen_key in options:
+                        dup.add(chosen_key)
+                        yield chosen_key
+                    else:
+                        raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
+            chosen_key = list(generator())
+            self.cache.chosen_key = chosen_key
+            self._pass_choice(options, chosen_key)
         else:
-            raise Exception('Too many arguments for %s - expected 1' % self)
+            if 1 == len(args):
+                chosen_key = args[0]
+                if self._varname_filter(chosen_key) and chosen_key in options:
+                    ctx.cache.chosen_key = chosen_key
+                    if self.cache_choice_value:
+                        ctx.cache.chosen_value = options[chosen_key]
+                    ctx.pass_data(options[chosen_key])
+                else:
+                    raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
+            else:
+                raise Exception('Too many arguments for %s - expected 1' % self)
 
 
 class OptionsTaskMulti(OptionsTask):
@@ -363,10 +362,14 @@ def prompt_and_invoke_with_dependencies(tasks_file):
 
     last_actions_indices = {n: i for i, n in enumerate(__MRU_ACTION_NAMES)}
 
+    pickable_tasks = list(pickable_tasks)
+
+    invocation_context = InvocationContext(tasks_file, None)
+
     choose = CHOOSE(
         pickable_tasks,
         fmt=lambda p: p[0],
-        preview=lambda p: p[1].gen_doc(tasks_file),
+        preview=lambda p: p[1](invocation_context).gen_doc(),
         score=lambda p: last_actions_indices.get(p[0], -1),
     )
     yield choose
@@ -389,9 +392,17 @@ class CombineSources(OptionsTask):
     def _cls_init_(cls):
         if not cls._CONCRETE_:
             return
+        super(CombineSources, cls)._cls_init_()
 
         if not hasattr(cls, 'sources'):
             raise TypeError('No sources defined for %s' % cls)
+
+    def all_dependencies(self):
+        for source in self.sources:
+            for dependency in source(self.invocation_context).all_dependencies():
+                yield dependency
+        for dependency in super(CombineSources, self).all_dependencies():
+            yield dependency
 
     def _func_(self):
         for source in self.sources:

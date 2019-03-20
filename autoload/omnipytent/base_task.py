@@ -104,11 +104,10 @@ class Task(object):
         code = cls._func_.__code__
         return code.co_filename, code.co_firstlineno
 
-    @classmethod
-    def all_dependencies(cls):
-        for dependency in cls.dependencies:
+    def all_dependencies(self):
+        for dependency in self.dependencies:
             yield dependency
-        for dependency in cls._special_args.values():
+        for dependency in self._special_args.values():
             yield dependency
 
     @classmethod
@@ -198,10 +197,17 @@ class Task(object):
         for yielded in self._run_func_as_generator(*args, **self._kwargs_for_func):
             yield yielded
 
+    @property
+    def _doc_(self):
+        if type(self).__doc__ is not None:
+            return type(self).__doc__
+        else:
+            return self._func_.__doc__
+
     def _func_(self):
         pass
 
-    def gen_doc(self, tasks_file):
+    def gen_doc(self):
         result = []
 
         if False:  # TODO: Enable when allowing arguments in selection UI
@@ -221,7 +227,7 @@ class Task(object):
         if deps:
             result.append('Dependencies: ' + deps)
 
-        result.append(self.doc)
+        result.append(self._doc_)
         return '\n\n'.join(str(line) for line in result if line is not None)
 
     def __repr__(self):
