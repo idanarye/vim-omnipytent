@@ -758,9 +758,9 @@ source can have its own "key", "preview" and "value" functions, and the
 combined task will use for each option the functions from the source that
 defined it.
 
-To make the task a multi-options task, set "multi = True": >
+To make the task a multi-options task, set "MULTI = True": >
     class combined_sources(CombineSources):
-        multi = True
+        MULTI = True
 
         sources = [...]
 <

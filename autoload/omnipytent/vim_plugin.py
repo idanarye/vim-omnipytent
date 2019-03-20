@@ -64,10 +64,6 @@ def edit_task(split_mode, taskname):
 
 
 def _api_complete(include_task_args):
-    # arg_lead = vim.eval('a:argLead')
-    # cmd_line = vim.eval('a:cmdLine')
-    # cursor_pos = int(vim.eval('a:cursorPos'))
-
     tasks_file = get_tasks_file()
     tasks_file.load_if_stale()
 
@@ -75,11 +71,9 @@ def _api_complete(include_task_args):
                                         cmd_line=vim.eval('a:cmdLine'),
                                         cursor_pos=int(vim.eval('a:cursorPos')))
 
-
     if ctx.task is None:  # task name completion
         return sorted(taskname for taskname in tasks_file.tasks.keys() if taskname.startswith(ctx.arg_prefix))
     else:  # arguments completion
         if not include_task_args:
             return []
         return ctx.task.completions(ctx)
-

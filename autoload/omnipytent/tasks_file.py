@@ -74,7 +74,7 @@ class TasksFile:
                     self.load()
                 try:
                     task = self.tasks[on_task]
-                    line = task.func.__code__.co_firstlineno
+                    _, line = task.get_definition_location()
                     vim.command('edit %s' % self.filename)
                     vim.command(str(line))
                 except KeyError:
@@ -118,7 +118,7 @@ class TasksFile:
         except AttributeError:
             module_iteritems = self.module.__dict__.items()
         for ident, value in module_iteritems:
-            if isinstance(value, Task):
+            if isinstance(value, type) and issubclass(value, Task) and value._CONCRETE_:
                 for name, subtask in value.gen_self_with_subtasks(ident):
                     self.tasks[name] = subtask
                     for alias in subtask.aliases:
@@ -133,12 +133,12 @@ class TasksFile:
         return self.tasks[key]
 
     def get_task_cache(self, task):
-        if self[task.name] is not task:
-            raise TypeError("%r cannot use the cache - not the %r in the tasks file" % (task, task.name))
+        if self[task.__name__] is not task:
+            raise TypeError("%r cannot use the cache - not the %r in the tasks file" % (task, task.__name__))
         try:
-            return self._tasks_cache[task.name]
+            return self._tasks_cache[task.__name__]
         except KeyError:
-            return self._tasks_cache.setdefault(task.name, _TaskCache())
+            return self._tasks_cache.setdefault(task.__name__, _TaskCache())
 
     @staticmethod
     def default_name():

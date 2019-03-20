@@ -13,83 +13,6 @@ class InvocationContext(object):
         self.start_window = vim.current.window
         self.start_buffer = vim.current.buffer
 
-    def for_task(self, task):
-        return task.TaskContext(self, task)
-
-
-class TaskContext(object):
-    def __init__(self, parent, task):
-        self._parent = parent
-        self.task = task
-        self.dep = DepDataFetcher(self)
-
-    def __repr__(self):
-        return '<TaskContext: %s>' % self.task.name
-
-    @property
-    def task_file(self):
-        return self._parent.task_file
-
-    @property
-    def has_passed_data(self):
-        return self.task in self._parent.dep_data
-
-    @property
-    def passed_data(self):
-        return self._parent.dep_data[self.task]
-
-    def pass_data(self, data):
-        self._parent.dep_data[self.task] = data
-
-    @property
-    def cache(self):
-        return self.task_file.get_task_cache(self.task)
-
-    @property
-    def is_main(self):
-        return self._parent.main_task == self.task
-
-    @property
-    def task_dir(self):
-        return self.task_file.tasks_dir
-
-    proj_dir = task_dir
-
-    @property
-    def file_dir(self):
-        filename = self._parent.start_buffer.name
-        if filename:
-            return os.path.dirname(filename)
-        else:
-            return self.cur_dir
-
-    @property
-    def cur_dir(self):
-        return self._parent.start_dir
-
-
-class DepDataFetcher:
-    def __init__(self, task_context):
-        self.__task_context = task_context
-
-    def __getattr__(self, name):
-        for dependency in self.__task_context.task.dependencies:
-            if dependency.name == name:
-                try:
-                    return self.__task_context._parent.dep_data[dependency]
-                except KeyError:
-                    raise AttributeError('%s did not pass data' % dependency)
-        raise AttributeError('%s has no dependency named "%s"' % (self.__task_context.task, name))
-
-    def _get_by_task(self, task):
-        return self.__task_context._parent.dep_data[task]
-
-    def _get_indirect(self, name):
-        for task, value in self.__task_context._parent.dep_data.items():
-            if task.name == name:
-                return value
-        raise KeyError('task %r did not pass data' % (name,))
-
 
 class CompletionContext:
     @classmethod
@@ -109,8 +32,10 @@ class CompletionContext:
                        cmd_line=cmd_line,
                        cursor_pos=cursor_pos)
         else:
+            task = tasks_file[parts[1]]
+            invocation_context = InvocationContext(tasks_file, task)
             return cls(tasks_file=tasks_file,
-                       task=tasks_file[parts[1]],
+                       task=task(invocation_context),
                        arg_index=len(parts) - 3,
                        arg_prefix=parts[-1],
                        prev_args=parts[2:-1],

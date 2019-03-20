@@ -1,7 +1,8 @@
 import types
+import inspect
 from functools import wraps
 
-from .tasks import Task, OptionsTask, WindowTask, OptionsTaskMulti
+from .tasks import Task, OptionsTask, WindowTask
 
 
 def _fluent(func):
@@ -31,13 +32,23 @@ class TaskDeclarator:
         else:
             return self
 
-    def _adjust_task(self, task):
-        task.dependencies.extend(self._dependencies)
-        task.completers.extend(self._completers)
-
     def _decorate(self, func):
-        result = self._task_class(func, **self._params)
-        self._adjust_task(result)
+        if func.__code__.co_argcount:
+            pass  # has a first argument
+        elif func.__code__.co_flags & inspect.CO_VARARGS:
+            pass  # has varargs - can count as first argument
+        else:
+            name = func.__name__
+            func = staticmethod(func)
+            func.__name__ = name
+
+        result = type(self._task_class)(
+            func.__name__,
+            (self._task_class,),
+            dict(self._params,
+                 _func_=func,
+                 dependencies=self._dependencies,
+                 completers=self._completers))
         return result
 
     @_fluent
@@ -63,7 +74,8 @@ class TaskDeclarator:
     @property
     @_fluent
     def options_multi(self):
-        self._task_class = OptionsTaskMulti
+        self._task_class = OptionsTask
+        self._params['MULTI'] = True
 
     @property
     @_fluent

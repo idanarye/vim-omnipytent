@@ -45,35 +45,35 @@ Describe Simple Task Commands
         Assert Equals(readfile('bar'), ['howdy'])
     End
 
-	It Task aliases
-		CreateTasksfile
-		@task(alias='write-file-alias-1')
-		def write_file(ctx, data):
+    It Task aliases
+        CreateTasksfile
+        @task(alias='write-file-alias-1')
+        def write_file(ctx, data):
             with open('foo', 'w') as f:
                 f.write(data)
 
-		@task(alias=['write-file-alias-2', ':write-file-alias-3'])
-		def write_file_2(ctx, data):
+        @task(alias=['write-file-alias-2', ':write-file-alias-3'])
+        def write_file_2(ctx, data):
             with open('foo', 'w') as f:
                 f.write(data)
 
-		@task(alias='write-file-alias-4 write-file-alias-5')
-		def write_file_3(ctx, data):
+        @task(alias='write-file-alias-4 write-file-alias-5')
+        def write_file_3(ctx, data):
             with open('foo', 'w') as f:
                 f.write(data)
 .
         Assert !filereadable('foo')
-		OP write_file hello
+        OP write_file hello
         Assert Equals(readfile('foo'), ['hello'])
-		OP write-file-alias-1 hi
+        OP write-file-alias-1 hi
         Assert Equals(readfile('foo'), ['hi'])
-		OP write-file-alias-2 howdy
+        OP write-file-alias-2 howdy
         Assert Equals(readfile('foo'), ['howdy'])
-		OP :write-file-alias-3 sup
+        OP :write-file-alias-3 sup
         Assert Equals(readfile('foo'), ['sup'])
-		OP write-file-alias-4 greetings
+        OP write-file-alias-4 greetings
         Assert Equals(readfile('foo'), ['greetings'])
-		OP write-file-alias-4 something
+        OP write-file-alias-4 something
         Assert Equals(readfile('foo'), ['something'])
-	End
+    End
 End

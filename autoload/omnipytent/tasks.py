@@ -2,253 +2,90 @@ import inspect
 from collections import OrderedDict
 
 import vim
-import re
 
+from .base_task import Task
 from .context import InvocationContext
 from .hacks import function_locals
-from .util import other_windows, flatten_iterator, is_generator_callable
-
-
-_getargspec = getattr(inspect, 'getfullargspec', inspect.getargspec)
-
-
-class Task(object):
-    from .context import TaskContext
-
-    class TaskContext(TaskContext):
-        @property
-        def _kwargs_for_func(self):
-            kwargs = {}
-            for name, task in self.task._special_args.items():
-                kwargs[name] = self.dep._get_by_task(task)
-            return kwargs
-
-    def __init__(self, func, alias=[], name=None, doc=None):
-        self.func = func
-        self._subtasks = {}
-
-        self.name = name or func.__name__
-        self.doc = doc or func.__doc__
-        try:
-            argspec = _getargspec(func)
-        except TypeError:
-            argspec = _getargspec(func.__call__)
-        self._task_ctx_arg_name = argspec.args[0] if argspec.args else None
-        if getattr(func, '__self__', None) is None:
-            self._task_args = argspec.args[1:]  # remove `ctx` from the list
-        else:
-            self._task_args = argspec.args[2:]  # remove `self`/`ctx` and `ctx` from the list
-        if argspec.defaults:
-            self._task_arg_defaults = dict(zip(self._task_args[-len(argspec.defaults):], argspec.defaults))
-        else:
-            self._task_arg_defaults = {}
-        self._task_varargs = argspec.varargs
-        self._special_args = OrderedDict()
-
-        self.dependencies = []
-        self.completers = []
-        if not alias:
-            self.aliases = []
-        elif isinstance(alias, str):
-            self.aliases = alias.split()
-        else:
-            self.aliases = list(alias)
-
-        self.__handle_special_args(argspec)
-
-    def gen_doc(self, tasks_file):
-        result = []
-
-        if False:  # TODO: Enable when allowing arguments in selection UI
-            def args():
-                for arg in self._task_args:
-                    if arg in self._task_arg_defaults:
-                        yield '[%s]' % arg
-                    else:
-                        yield arg
-                if self._task_varargs:
-                    yield '[%s...]' % self._task_varargs
-            args = ' '.join(args())
-            if args:
-                result.append('Arguments: ' + args)
-
-        deps = ', '.join(d.name for d in self.all_dependencies(tasks_file))
-        if deps:
-            result.append('Dependencies: ' + deps)
-
-        result.append(self.doc)
-        return '\n\n'.join(str(line) for line in result if line is not None)
-
-    def subtask(self, name, alias=[], doc=None):
-        def inner(func):
-            self._subtasks[name] = Task(
-                func,
-                name=self._format_subtask_full_name(self.name, name),
-                alias=alias,
-                doc=doc)
-
-        if isinstance(name, str):
-            return inner
-        elif callable(name):
-            func = name
-            name = func.__name__
-            inner(func)
-        else:
-            raise TypeError('Bad paramter for subtask %r' % (name,))
-
-    def __handle_special_args(self, argspec):
-        special_defaults = list(self.__split_special_defaults(argspec))
-        if special_defaults:
-            special_args = argspec.args[-len(special_defaults):]
-            self._special_args.update(zip(special_args, special_defaults))
-            assert special_args == self._task_args[-len(special_args):]
-            self._task_args = self._task_args[:-len(special_args)]
-            for arg in special_args:
-                del self._task_arg_defaults[arg]
-        if getattr(argspec, 'kwonlydefaults', None):
-            for k, v in argspec.kwonlydefaults.items():
-                if not self.__is_default_special(v):
-                    raise SyntaxError('Non-special argument %s=%s' % (k, v))
-                self._special_args[k] = v
-
-    @classmethod
-    def __split_special_defaults(cls, argspec):
-        if not argspec.defaults:
-            return
-        found_first_special = False
-        for default in argspec.defaults:
-            if cls.__is_default_special(default):
-                found_first_special = True
-                yield default
-            elif found_first_special:
-                raise SyntaxError('Non-special default %s after special defaults' % (default,))
-
-    @classmethod
-    def __is_default_special(cls, default):
-        return isinstance(default, Task)
-
-    def all_dependencies(self, tasks_file):
-        for dependency in self.dependencies:
-            yield dependency
-        for dependency in self._special_args.values():
-            yield dependency
-
-    def _run_func_as_generator(self, *args, **kwargs):
-        result = self.func(*args, **kwargs)
-        if inspect.isgenerator(result):
-            result = flatten_iterator(result)
-            try:
-                yielded = next(result)
-                while True:
-                    yield yielded
-                    yielded = result.send(yielded._returned_value)
-            except StopIteration:
-                pass
-
-    def invoke(self, ctx, *args):
-        ctx = ctx.for_task(self)
-        if not ctx.is_main:
-            args = ()
-        for yielded in self._run_func_as_generator(ctx, *args, **ctx._kwargs_for_func):
-            yield yielded
-
-    def __repr__(self):
-        return '<Task: %s>' % self.name
-
-    def completions(self, ctx):
-        result = set()
-        for completer in self.completers:
-            result.update(completer(ctx))
-        return sorted(result)
-
-    def complete(self, func):
-        def completer(ctx):
-            result = func(ctx)
-            result = (item for item in result if item.startswith(ctx.arg_prefix))
-            return result
-        self.completers.append(completer)
-
-    __STARTS_WITH_WORD_CHARACTER_PATTERN = re.compile(r'^\w')
-
-    @classmethod
-    def _format_subtask_full_name(ctx, prefix, name):
-        if not prefix:
-            return name
-        elif ctx.__STARTS_WITH_WORD_CHARACTER_PATTERN.match(name):
-            return '%s.%s' % (prefix, name)
-        else:
-            return '%s%s' % (prefix, name)
-
-    def gen_self_with_subtasks(self, ident):
-        yield ident, self
-        for subtask_ident, subtask in self._subtasks.items():
-            subtask_ident = self._format_subtask_full_name(ident, subtask_ident)
-            for pair in subtask.gen_self_with_subtasks(ident=subtask_ident):
-                yield pair
+from .util import other_windows, is_generator_callable, bare_func_wrapper
 
 
 class OptionsTask(Task):
+    _CONCRETE_ = False
+
     MULTI = False
 
-    class TaskContext(Task.TaskContext):
-        _key = None
-        _value = staticmethod(lambda v: v)
-        _preview = None
-        _score = None
+    _key = None
+    _value = staticmethod(lambda v: v)
+    _preview = None
+    _score = None
 
-        def key(self, key):
-            self._key = key
+    def key(self, key):
+        self._key = key
 
-        def value(self, value):
-            self._value = value
+    def value(self, value):
+        self._value = value
 
-        def preview(self, preview):
-            self._preview = preview
+    def preview(self, preview):
+        self._preview = preview
 
-        def score(self, score):
-            self._score = score
+    def score(self, score):
+        self._score = score
 
-        @property
-        def _chosen_key(self):
-            return getattr(self.cache, 'chosen_key', None)
+    @property
+    def _chosen_key(self):
+        return getattr(self.cache, 'chosen_key', None)
 
-        def _should_repick(self, options):
-            if self.is_main:
+    def _should_repick(self, options):
+        if self.is_main:
+            return True
+        if self.MULTI:
+            if not self._chosen_key:
                 return True
+            return not set(self._chosen_key).issubset(options)
+        else:
             return self._chosen_key not in options
 
-        def _pass_choice(self, options, chosen_key):
+    def _pass_choice(self, options, chosen_key):
+        if self.MULTI:
+            values = map(options.get, chosen_key)
+            values = map(self._value, values)
+            values = list(values)
+            self.pass_data(values)
+            return values
+        else:
             value = options.get(chosen_key, None)
             value = self._value(value)
             self.pass_data(value)
             return value
 
-        def _pass_from_arguments(self, options, args):
-            pass
+    cache_choice_value = False
 
-    def __init__(self, func, cache_choice_value=False, **kwargs):
-        self._cache_choice_value = cache_choice_value
-        super(OptionsTask, self).__init__(func, **kwargs)
+    @classmethod
+    def _cls_init_(cls):
+        if not cls._CONCRETE_:
+            return
 
-        if 1 < len(self._task_args):
-            raise Exception('Options task %s should have 0 or 1 arg' % self)
+        if 1 < len(cls._task_args):
+            raise Exception('Options task %s should have 0 or 1 arg' % cls)
 
-        self.complete(self.complete_options)
+        cls.complete(cls.complete_options)
 
-        self.subtask('?', doc='Print the current choice for the %r task' % self.name)(self.print_choice)
-        self.subtask('!', doc='Clear the choice for the %r task' % self.name)(self.clear_choice)
+        cls.subtask('?', doc='Print the current choice for the %r task' % cls.__name__)(bare_func_wrapper(cls.print_choice))
+        cls.subtask('!', doc='Clear the choice for the %r task' % cls.__name__)(bare_func_wrapper(cls.clear_choice))
 
-    def print_choice(self, ctx):
-        cache = ctx.task_file.get_task_cache(self)
+    @classmethod
+    def print_choice(cls, self):
+        cache = self.task_file.get_task_cache(cls)
         try:
             chosen_key = cache.chosen_key
         except AttributeError:
-            print('%s has no selected value' % (self.name,))
+            print('%s has no selected value' % (cls.__name__,))
             return
-        print('Current choice for %s: %s' % (self.name, chosen_key))
+        print('Current choice for %s: %s' % (cls.__name__, chosen_key))
 
-    def clear_choice(self, ctx):
-        cache = ctx.task_file.get_task_cache(self)
+    @classmethod
+    def clear_choice(cls, self):
+        cache = self.task_file.get_task_cache(cls)
         try:
             del cache.chosen_key
         except AttributeError:
@@ -267,75 +104,74 @@ class OptionsTask(Task):
         ])
 
     def _gen_keys_for_completion(self, cctx):
-        if not is_generator_callable(self.func):
-            for name in self.func.__code__.co_varnames:
+        if not is_generator_callable(self._func_):
+            for name in self._func_.__code__.co_varnames:
                 if self._varname_filter(name):
                     yield name
             return
 
         ictx = InvocationContext(cctx.tasks_file, self)
-        tctx = ictx.for_task(self)
-        for key in self._resolve_options(tctx).keys():
+        for key in self._resolve_options().keys():
             yield key
 
-    def complete_options(self, ctx):
-        if 0 == ctx.arg_index:
-            return self._gen_keys_for_completion(ctx)
+    @classmethod
+    def complete_options(cls, ctx):
+        if cls.MULTI:
+            already_picked = set(ctx.prev_args)
+            return [key for key in ctx.task._gen_keys_for_completion(ctx)
+                    if key not in already_picked]
         else:
-            return []
+            if 0 == ctx.arg_index:
+                return ctx.task._gen_keys_for_completion(ctx)
+            else:
+                return []
 
-    def _resolve_options(self, ctx):
-        if self._task_ctx_arg_name:
-            args = (ctx,)
-        else:
-            args = ()
-
-        if not is_generator_callable(self.func):
-            result = function_locals(self.func, *args, **ctx._kwargs_for_func)
+    def _resolve_options(self):
+        if not is_generator_callable(self._func_):
+            result = function_locals(self._func_, **self._kwargs_for_func)
             for special_arg in self._special_args.keys():
                 result.pop(special_arg, None)
             return result
 
-        items = list(self.func(*args, **ctx._kwargs_for_func))
-        if not ctx._key:
-            raise Exception('ctx.key not set for generator-based options task')
-        return OrderedDict((str(ctx._key(item)), item) for item in items)
+        items = list(self._func_(**self._kwargs_for_func))
+        if not self._key:
+            raise Exception('key not set for generator-based options task')
+        return OrderedDict((str(self._key(item)), item) for item in items)
 
-    def invoke(self, ctx, *args):
+    def invoke(self, *args):
         from .async_execution import CHOOSE
-        ctx = ctx.for_task(self)
 
-        if self._cache_choice_value and not ctx.is_main:
+        if self.cache_choice_value and not self.is_main:
             try:
-                chosen_value = ctx.cache.chosen_value
+                chosen_value = self.cache.chosen_value
             except AttributeError:
                 pass
             else:
-                ctx.pass_data(chosen_value)
+                self.pass_data(chosen_value)
                 return
 
-        options = self._resolve_options(ctx)
+        options = self._resolve_options()
 
-        if 0 == len(args) or not ctx.is_main:
-            if ctx._should_repick(options):  # includes the possibility that chosen_key is None
+        if 0 == len(args) or not self.is_main:
+            if self._should_repick(options):  # includes the possibility that chosen_key is None
                 options_keys = list(filter(self._varname_filter, options.keys()))
                 if 0 == len(options):
                     raise Exception('No options set in %s' % self)
                 elif 1 == len(options):
                     single_key, = options.keys()
-                    single_value = ctx._pass_choice(options, single_key)
-                    if self._cache_choice_value:
-                        ctx.cache.chosen_value = single_value
+                    single_value = self._pass_choice(options, single_key)
+                    if self.cache_choice_value:
+                        self.cache.chosen_value = single_value
                     return
-                if ctx._preview:
+                if self._preview:
                     def preview(key):
-                        return ctx._preview(options[key])
+                        return self._preview(options[key])
                 else:
                     preview = None
 
-                if ctx._score:
+                if self._score:
                     def score(key):
-                        return ctx._score(options[key])
+                        return self._score(options[key])
                 else:
                     score = None
 
@@ -343,116 +179,103 @@ class OptionsTask(Task):
                 yield async_cmd
                 chosen_key = async_cmd._returned_value
                 if chosen_key:
-                    ctx.cache.chosen_key = chosen_key
-                    chosen_value = ctx._pass_choice(options, chosen_key)
-                    if self._cache_choice_value:
-                        ctx.cache.chosen_value = chosen_value
+                    self.cache.chosen_key = chosen_key
+                    chosen_value = self._pass_choice(options, chosen_key)
+                    if self.cache_choice_value:
+                        self.cache.chosen_value = chosen_value
             else:
-                chosen_key = ctx._chosen_key
+                chosen_key = self._chosen_key
 
-            ctx._pass_choice(options, chosen_key)
+            self._pass_choice(options, chosen_key)
         else:
-            self._pass_from_arguments(ctx, options, args)
+            self._pass_from_arguments(self, options, args)
 
     def _pass_from_arguments(self, ctx, options, args):
-        if 1 == len(args):
-            chosen_key = args[0]
-            if self._varname_filter(chosen_key) and chosen_key in options:
-                ctx.cache.chosen_key = chosen_key
-                if self._cache_choice_value:
-                    ctx.cache.chosen_value = options[chosen_key]
-                ctx.pass_data(options[chosen_key])
-            else:
-                raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
+        if self.MULTI:
+            def generator():
+                dup = set()
+                for chosen_key in args:
+                    if chosen_key in dup:
+                        raise Exception('%s picked more than once' % (chosen_key,))
+                    elif self._varname_filter(chosen_key) and chosen_key in options:
+                        dup.add(chosen_key)
+                        yield chosen_key
+                    else:
+                        raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
+            chosen_key = list(generator())
+            self.cache.chosen_key = chosen_key
+            self._pass_choice(options, chosen_key)
         else:
-            raise Exception('Too many arguments for %s - expected 1' % self)
+            if 1 == len(args):
+                chosen_key = args[0]
+                if self._varname_filter(chosen_key) and chosen_key in options:
+                    ctx.cache.chosen_key = chosen_key
+                    if self.cache_choice_value:
+                        ctx.cache.chosen_value = options[chosen_key]
+                    ctx.pass_data(options[chosen_key])
+                else:
+                    raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
+            else:
+                raise Exception('Too many arguments for %s - expected 1' % self)
 
 
 class OptionsTaskMulti(OptionsTask):
+    _CONCRETE_ = False
+
     MULTI = True
-
-    class TaskContext(OptionsTask.TaskContext):
-        def _should_repick(self, options):
-            if self.is_main:
-                return True
-            if not self._chosen_key:
-                return True
-            return not set(self._chosen_key).issubset(options)
-
-        def _pass_choice(self, options, chosen_key):
-            values = map(options.get, chosen_key)
-            values = map(self._value, values)
-            values = list(values)
-            self.pass_data(values)
-            return values
-
-    def complete_options(self, ctx):
-        already_picked = set(ctx.prev_args)
-        return [key for key in self._gen_keys_for_completion(ctx)
-                if key not in already_picked]
-
-    def _pass_from_arguments(self, ctx, options, args):
-        def generator():
-            dup = set()
-            for chosen_key in args:
-                if chosen_key in dup:
-                    raise Exception('%s picked more than once' % (chosen_key,))
-                elif self._varname_filter(chosen_key) and chosen_key in options:
-                    dup.add(chosen_key)
-                    yield chosen_key
-                else:
-                    raise Exception('%s is not a valid choice for %s' % (chosen_key, self))
-        chosen_key = list(generator())
-        ctx.cache.chosen_key = chosen_key
-        ctx._pass_choice(options, chosen_key)
 
 
 class WindowTask(Task):
-    def __init__(self, *args, **kwargs):
-        super(WindowTask, self).__init__(*args, **kwargs)
-        self.subtask(self.close, doc='Close the window opened by the %r task' % self.name)
+    _CONCRETE_ = False
 
-    def invoke(self, ctx, *args):
-        task_ctx = ctx.for_task(self)
+    @classmethod
+    def _cls_init_(cls):
+        if not cls._CONCRETE_:
+            return
+
+        cls.subtask(bare_func_wrapper(cls.close), doc='Close the window opened by the %r task' % cls.__name__)
+
+    def invoke(self, *args):
         try:
-            window = task_ctx.cache.window
+            window = self.cache.window
         except AttributeError:
             pass
         else:
             if window.valid:
-                if task_ctx.is_main:
+                if self.is_main:
                     with other_windows(window):
                         vim.command('bdelete!')
                 else:
                     try:
-                        passed_data = task_ctx.cache.passed_data
+                        passed_data = self.cache.passed_data
                     except AttributeError:
-                        task_ctx.pass_data(window)
+                        self.pass_data(window)
                     else:
-                        task_ctx.pass_data(passed_data)
+                        self.pass_data(passed_data)
                     return
 
         try:
-            del task_ctx.cache.window
+            del self.cache.window
         except AttributeError:
             pass
         try:
-            del task_ctx.cache.pass_data
+            del self.cache.pass_data
         except AttributeError:
             pass
 
         with other_windows():
-            for yielded in super(WindowTask, self).invoke(ctx, *args):
+            for yielded in super(WindowTask, self).invoke(*args):
                 yield yielded
             window = vim.current.window
-        task_ctx.cache.window = window
-        if task_ctx.has_passed_data:
-            task_ctx.cache.passed_data = task_ctx.passed_data
+        self.cache.window = window
+        if self.has_passed_data:
+            self.cache.passed_data = self.passed_data
         else:
-            task_ctx.pass_data(window)
+            self.pass_data(window)
 
-    def close(self, ctx):
-        cache = ctx.task_file.get_task_cache(self)
+    @classmethod
+    def close(cls, self):
+        cache = self.task_file.get_task_cache(cls)
         try:
             window = cache.window
         except AttributeError:
@@ -467,21 +290,21 @@ class WindowTask(Task):
 
 
 def invoke_with_dependencies(tasks_file, task, args):
-    ctx = InvocationContext(tasks_file, task)
+    invocation_context = InvocationContext(tasks_file, task)
 
-    stack = [task]
+    stack = [task(invocation_context)]
     run_order = []
     while stack:
         popped_task = stack.pop()
         run_order.insert(0, popped_task)
-        stack += popped_task.all_dependencies(tasks_file)
+        stack.extend(d(invocation_context) for d in popped_task.all_dependencies())
 
     already_invoked = set()
     with tasks_file.in_tasks_dir_context():
         for task in run_order:
-            if task not in already_invoked:
-                already_invoked.add(task)
-                for yielded in task.invoke(ctx, *args):
+            if type(task) not in already_invoked:
+                already_invoked.add(type(task))
+                for yielded in task.invoke(*args):
                     yield yielded
 
 
@@ -495,10 +318,14 @@ def prompt_and_invoke_with_dependencies(tasks_file):
 
     last_actions_indices = {n: i for i, n in enumerate(__MRU_ACTION_NAMES)}
 
+    pickable_tasks = list(pickable_tasks)
+
+    invocation_context = InvocationContext(tasks_file, None)
+
     choose = CHOOSE(
         pickable_tasks,
         fmt=lambda p: p[0],
-        preview=lambda p: p[1].gen_doc(tasks_file),
+        preview=lambda p: p[1](invocation_context).gen_doc(),
         score=lambda p: last_actions_indices.get(p[0], -1),
     )
     yield choose
@@ -512,3 +339,44 @@ def prompt_and_invoke_with_dependencies(tasks_file):
 
     for yielded in invoke_with_dependencies(tasks_file, task, []):
         yield yielded
+
+
+class CombineSources(OptionsTask):
+    _CONCRETE_ = False
+
+    @classmethod
+    def _cls_init_(cls):
+        if not cls._CONCRETE_:
+            return
+        super(CombineSources, cls)._cls_init_()
+
+        if not hasattr(cls, 'sources'):
+            raise TypeError('No sources defined for %s' % cls)
+
+    def all_dependencies(self):
+        for source in self.sources:
+            for dependency in source(self.invocation_context).all_dependencies():
+                yield dependency
+        for dependency in super(CombineSources, self).all_dependencies():
+            yield dependency
+
+    def _func_(self):
+        for source in self.sources:
+            source = source(self.invocation_context)
+            for value in source._resolve_options().values():
+                yield source, value
+
+    def __redirector(self, target, item):
+        source, value = item
+        func = getattr(source, target)
+        if target == '_preview' and func is None:
+            return 'No preview for %s' % source.name
+        return func(value)
+
+    def _key(self, item):
+        return self.__redirector('_key', item)
+
+    def _value(self, item):
+        return self.__redirector('_value', item)
+
+    # TODO: - add `_score()`?
