@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+- Refactor the tasks architecture:
+  - **NOTE**: this change could _potentially break_ task files that were
+    messing with the internal structure, but _should not affect_ code that was
+    only accessing the documented features.
+  - Each task is a type now.
+  - Tasks get instantiated when you run them.
+  - The instantiated tasks serve as their own context.
+
 ### Added
 - Sugar for task dependencies (using argument defaults)
 - Task aliases.
@@ -18,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - For options task - `<task>?` to print the choice and `<task>!` to clear it.
   - For windows task - `<task>.close` to close the window.
 - Bare `:OP` to open a selection UI for picking tasks.
+- `CombineSources` task for combining multiple options tasks.
 
 ### Fixed
 - Package structure in `omnipytent.ext`.
