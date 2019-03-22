@@ -16,6 +16,9 @@ Integrake(see https://github.com/idanarye/vim-integrake), and follows a similar
 design - but in Python, so it could be used in neovim(which did not have Ruby
 support at the time)
 
+To start using Omnipytent, refer to |omnipytent-creating-tasks| and
+|omnipytent-running-tasks|.
+
 
 CHEAT SHEET                                            *omnipytent-cheat-sheet*
 
@@ -91,23 +94,15 @@ advice - Omnipytent is not enough.
 
 CONFIGURATION                                       *omnipytent-configuration*
 
-Omnipytent tasks files are personal, so if two developers work on the same
-project, they need two different tasks files. To easily differentiate between
-the tasks files of different developers, each developer should set a prefix
-using the *g:omnipytent_filePrefix* global variable. It's a good idea to use
-your name the prefix - so other developers will know that file belongs to you
-- and to start it with ".", so it will be hidden by the operation system(unless
-  you use Windows) and by plugins like NERDTree.
-
-Example: >
-    let g:omnipytent_filePrefix = '.moshecohen'
-<
-
-Other configuration options:
-
-* |g:omnipytent_defaultPythonVersion|
-* |g:omnipytent_projectRootMarkers|
-* |g:omnipytent_selectionUI|
+* |g:omnipytent_filePrefix| - set a unique prefix to identify your personal
+  tasks file in each project directory.
+* |g:omnipytent_defaultPythonVersion| - set the default Python version to use
+  when generating a new tasks file.
+* |g:omnipytent_projectRootMarkers| - list of files that mark the project root
+  directory. Used for automatically placing new tasks files at their correct
+  location.
+* |g:omnipytent_selectionUI| - set the UI Omnipytent will use to propmt you to
+  pick an item from a list.
 
 
 PYTHON VERSIONS                                   *omnipytent-python-versions*
@@ -144,10 +139,22 @@ need to take care of that compatibility yourself(or use an automated tool like
 
 CREATING TASKS                                     *omnipytent-creating-tasks*
 
-Omnipytent tasks are written in the Omnipytent tasks file. The tasks file must
-be at the current directory(=the root of the project) and it's name is the
-value of |g:omnipytent_filePrefix| plus the ".omnipytent.2.py" or
-".omnipytent.3.py" suffix(depending on the Python version used)
+Omnipytent tasks are written in the Omnipytent tasks file. Tasks files are
+personal, so if two developers work on the same project, they need two
+different tasks files. To easily differentiate between the tasks files of
+different developers, each developer should set a prefix using the
+*g:omnipytent_filePrefix* global variable. It's a good idea to use your name
+the prefix - so other developers will know that file belongs to you
+- and to start it with ".", so it will be hidden by the operation system
+(unless you use Windows) and by plugins like NERDTree.
+
+Example: >
+    let g:omnipytent_filePrefix = '.moshecohen'
+<
+
+The tasks file must be at the current directory(=the root of the project) and
+it's name is the value of |g:omnipytent_filePrefix| plus the ".omnipytent.2.py"
+or ".omnipytent.3.py" suffix(depending on the Python version used)
 
 Instead of opening it with |:edit| and it's name, you'll usually want to open
 it with the edit commands - *:OPedit*, *:OPsedit*, *:OPvedit* and *:OPtedit*,
@@ -187,11 +194,11 @@ specific Python version's Omnipytent tasks file, but since you can not only run
 tasks if you already have a tasks file, you can usually just use |:OP|.
 
 |:OP| expects the task's name as the first argument. If the task has arguments,
-they should be added as additional arguments to *:OP* .
+they should be added as additional arguments to |:OP| .
 
-Invoking |:OP| with no arguments will open a selection UI for picking the task.
-Tasks with mandatory arguments cannot be picked that way (this may change in
-the future)
+Invoking |:OP| with no arguments will open |omnipytent-selection-ui| for
+picking the task.  Tasks with mandatory arguments cannot be picked that way
+(this may change in the future)
 
 Tasks will run in the directory of their tasks file - regardless of Vim's CWD
 at the moment of their invocation.
@@ -468,8 +475,8 @@ The "omnipytent" module exposes some async commands:
   * "init":     If callable - will be called after the buffer's creation.
                 If string - will be invoked as a Vim command.
                                                            *omnipytent-CHOOSE*
-* "CHOOSE" Uses a selection UI to choose from the specified options. Accepts
-  the following arguments:
+* "CHOOSE" Uses |omnipytent-selection-ui| to choose from the specified options.
+  Accepts the following arguments:
   * "source":  Mandatory. The list of options to pick from.
   * "multi":   If True, return a list of selected items. Only supported in FZF,
                Unite and Denite.
@@ -957,6 +964,25 @@ Then you can run the tasks with: >
 We run "bar" as a "member" of "foo". We do the same for "baz", but we set its
 name to "bazz" so we call it with that name. "qux" has a name that begins with
 a non-identifier character, so we don't use a dot when we call it.
+
+
+SELECTION UI                                         *omnipytent-selection-ui*
+
+A selection UI is an interface for choosing an item from a list. Omnipytent
+uses it for several purposes:
+* For choosing a task when you run |:OP| with no arguments.
+* For choosing an option when invoking an |omnipytent-options-task| with no
+  arguments.
+* For when a task uses |omnipytent-CHOOSE|.
+
+The selection is performed by invoking another plugin - FZF, Deinte, Unite or
+CtrlP. If none of these plugins is available, an |inputlist()| based solution
+is used.
+
+You can control the choice of selection UI by setting *g:omnipytent_filePrefix*
+to "fzf", "denite", "unite", "ctrlp" or "inputlist". Or, if you implement your
+own selection UI as a Python class, you can set it to the fully qualified name
+of that class.
 
 
 OTHER HELPERS              *omnipytent-other-helpers* *omnipytent-utils-module*
