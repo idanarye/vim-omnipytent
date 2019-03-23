@@ -42,7 +42,7 @@ KEY FEATURES
    [Unite](https://github.com/Shougo/unite.vim) and
    [CtrlP](https://github.com/ctrlpvim/ctrlp.vim)
  * Define helpers in other plugins and load them from a special
-   `omnipytent.ext` module.
+   `omnipytent.ext` module. Also useful for importing common sets of tasks.
 
 GETTING STARTED
 ===============

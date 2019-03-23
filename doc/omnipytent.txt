@@ -78,7 +78,7 @@ KEY FEATURES                                          *omnipytent-key-features*
   Unite(https://github.com/Shougo/unite.vim) and
   CtrlP(https://github.com/ctrlpvim/ctrlp.vim)
 * Define helpers in other plugins and load them from a special |omnipytent.ext|
-  module.
+  module. Also useful for importing common sets of tasks.
 
 
 OMNIPYTENT IS NOT A BUILD SYSTEM!            *omnipytent-is-not-a-build-system*
@@ -1084,3 +1084,7 @@ This allows you, in your omnipytent file, to write: >
     def compile(ctx):
         local['gcc']['main.c'] & ERUN
 <
+
+This feature is also useful if you have common sets of tasks you always use in
+certain kinds of projects. You can put these in some global file and load them
+in tasks files of projects where they are relevant.
