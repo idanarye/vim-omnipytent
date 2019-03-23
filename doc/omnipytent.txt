@@ -130,11 +130,11 @@ Example: >
 If you don't set it, or set it to anything other than 2 or 3, you'll get an
 error.
 
-You can convert your tasks file between Python versions using
-*:OPconvertTasksFilePythonVersion* . This will not change the contents of the
-tasks file itself, so it may not work with the other version's syntax - you
-need to take care of that compatibility yourself(or use an automated tool like
-2to3 or 3to2)
+You can convert your tasks file between Python versions using the
+*:OPconvertTasksFilePythonVersion* command. This will not change the contents
+of the tasks file itself, so it may not work with the other version's syntax -
+you need to take care of that compatibility yourself(or use an automated tool
+like 2to3 or 3to2)
 
 
 CREATING TASKS                                     *omnipytent-creating-tasks*
@@ -194,7 +194,7 @@ specific Python version's Omnipytent tasks file, but since you can not only run
 tasks if you already have a tasks file, you can usually just use |:OP|.
 
 |:OP| expects the task's name as the first argument. If the task has arguments,
-they should be added as additional arguments to |:OP| .
+they should be added as additional arguments to |:OP|.
 
 Invoking |:OP| with no arguments will open |omnipytent-selection-ui| for
 picking the task.  Tasks with mandatory arguments cannot be picked that way
@@ -726,7 +726,7 @@ depend on but should not be passed from the task. Example: >
             with open(filename) as f:
                 return json.load(f)
 
-        for filename in glob.glob('* .json'):
+        for filename in glob.glob('*.json'):
             yield filename
 <
 We display the filename, but the data passed from choose_config is just the
