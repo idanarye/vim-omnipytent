@@ -205,6 +205,7 @@ def SH(command):
 
 
 from .terminal import Terminal
+from .async_job import AsyncJob
 if hasattr(Terminal, 'start'):
     @ShellCommandExecuter
     def TERMINAL_TAB(command):
@@ -231,3 +232,7 @@ if hasattr(Terminal, 'start'):
         vim.command(vertical + 'call winrestview(%s)' % (old_win_view,))
         vim.command(vertical + 'resize %s' % (size,))
         return Terminal.start(command)
+
+    @ShellCommandExecuter
+    def JOB(command):
+        return AsyncJob(command)

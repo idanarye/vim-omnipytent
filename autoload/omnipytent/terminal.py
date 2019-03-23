@@ -42,7 +42,7 @@ class Terminal(ShellCommandExecuter):
     elif bool(int(vim.eval('exists("*termopen")'))):  # Neovim
         @staticmethod
         def __start(command):
-            callback = FN['omnipytent#_nvimTerminalCallback']
+            callback = FN['omnipytent#_nvimJobCallback']
             job_id = FN.termopen(command, dict(
                 on_stdout=callback,
                 on_stderr=callback,

@@ -265,21 +265,21 @@ endif
 let s:yieldedCommandForJobs = {}
 
 if has('nvim')
-    function! s:termToJob(term) abort
+    function! s:resolveJob(term) abort
         return a:term
     endfunction
 else
-    function! s:termToJob(term) abort
+    function! s:resolveJob(term) abort
         return job_getchannel(term_getjob(a:term))
     endfunction
 endif
 
 function! omnipytent#_registerYieldedCommandForJob(jobId, yieldedCommand) abort
-    let s:yieldedCommandForJobs[s:termToJob(a:jobId)] = a:yieldedCommand
+    let s:yieldedCommandForJobs[s:resolveJob(a:jobId)] = a:yieldedCommand
 endfunction
 
 function! omnipytent#_unregisterYieldedCommandForJob(jobId) abort
-    call remove(s:yieldedCommandForJobs, s:termToJob(a:jobId))
+    call remove(s:yieldedCommandForJobs, s:resolveJob(a:jobId))
 endfunction
 
 function! omnipytent#_vimTerminalChannelCallback(channel, msg) abort
@@ -298,7 +298,7 @@ function! omnipytent#_vimTerminalExitCallback(channel, status) abort
     call l:yieldedCommand.tryCall('handle_text_output', split(a:msg, "\10"))
 endfunction
 
-function! omnipytent#_nvimTerminalCallback(jobId, data, event) dict abort
+function! omnipytent#_nvimJobCallback(jobId, data, event) dict abort
     let l:yieldedCommand = get(s:yieldedCommandForJobs, a:jobId)
     if empty(l:yieldedCommand)
         return

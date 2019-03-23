@@ -19,8 +19,8 @@ from .tasks import CombineSources
 from . import _extending as __extending
 
 try:
-    from .execution import TERMINAL_TAB, TERMINAL_PANEL
-    __all__.extend(['TERMINAL_TAB', 'TERMINAL_PANEL'])
+    from .execution import TERMINAL_TAB, TERMINAL_PANEL, JOB
+    __all__.extend(['TERMINAL_TAB', 'TERMINAL_PANEL', 'JOB'])
 except ImportError:
     pass
 
