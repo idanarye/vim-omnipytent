@@ -44,3 +44,92 @@ KEY FEATURES
  * Define helpers in other plugins and load them from a special
    `omnipytent.ext` module.
 
+GETTING STARTED
+===============
+
+Set the file prefix and default python version in your `.vimrc` - something like:
+
+```vim
+let g:omnipytent_filePrefix = '.moshecohen' " Replace with your own (user)name
+let g:omnipytent_defaultPythonVersion = 3 " Or 2, if you want to use Python 2
+```
+
+Open Vim in the root directory of your project - let's assume it's a C project
+with a Makefile. To create a tasks file for this project, run:
+```vim
+:OPedit build
+```
+
+This will generate a brand new tasks file that looks like this:
+
+```python
+import vim
+from omnipytent import *
+```
+
+To create your first task, run:
+
+```vim
+:OPedit build
+```
+
+This will append a new task to the tasks file:
+```python
+@task
+def build(ctx):
+    <cursor here in insert mode>
+```
+
+Now write the body of the task:
+
+```python
+@task
+def build(ctx):
+    CMD.make('--quiet')
+```
+
+Omnipytent's `CMD` object can be used to run Vim commands - so this task will
+run the Vim command `:make --quiet` and build your project. To activate it, run:
+
+```vim
+:OP build
+```
+
+Let's create more tasks. You don't have to use `:OPedit` - you can just
+copy-paste the `build` task and modify it:
+
+```python
+@task
+def run(ctx):
+    BANG('./a.out', 'hello', 'world')
+
+
+@task
+def debug(ctx):
+    TERMINAL_PANEL('gdb', './a.out')
+```
+
+`BANG` can be used to run shell command - so running this task with `:OP run`
+is the same as running:
+```vim
+:!./a.out hello world
+```
+
+Because `gdb` is an interactive program, we can't run it with regular `:!` - we
+need `:terminal` - so we use `TERMINAL_PANEL`. There is also `TERMINAL_TAB`
+that opens the terminal in another tab.
+
+And that's it - you have a tasks file with three tasks to build, run and debug
+your code. You can add more tasks that do different things.
+
+Few important usability notes:
+
+* You can run `:OP` without arguments to get a prompt for picking the task you
+  want to run.
+* You can run `:OPedit` again to go back to the tasks file.
+* Running `:OPedit build` will not create a new task - it will jump to the
+  existing `build` task instead.
+
+For advanced usage tips, refer to [the wiki](https://github.com/idanarye/vim-omnipytent/wiki).
+
+For more detailed documentation, refer to `:help omnipytent`.
