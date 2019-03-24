@@ -56,7 +56,7 @@ class AsyncCommand(ABC):
         return RawVim.fmt('omnipytent#_yieldedCommand(%s,%s)', sys.version_info[0], self.idx)
 
     def _register(self):
-        if self.idx is not None:
+        if self.idx is None:
             self.idx = next(_IDX_COUNTER)
             self.yielded[self.idx] = self
 
@@ -67,8 +67,12 @@ class AsyncCommand(ABC):
     def call(self, method, args):
         return getattr(self, method)(*args)
 
+    def _resolve_returned_value(self, returned_value):
+        """Override if the returned value is not something you can easily pass through Vimscript"""
+        return returned_value
+
     def resume(self, returned_value=None):
-        self._returned_value = returned_value
+        self._returned_value = self._resolve_returned_value(returned_value)
         if self._running_from_async_executor:
             raise AbortAsyncCommand
         else:

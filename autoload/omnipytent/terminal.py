@@ -98,7 +98,7 @@ class TerminalYieldedCommand(AsyncCommand):
         FN['omnipytent#_unregisterYieldedCommandForJob'](self.terminal.job_id)
         super(TerminalYieldedCommand, self).resume(returned_value=returned_value)
 
-    def handle_text_output(self, data):
+    def handle_text_output(self, channel, data):
         for chunk in data:
             self.buffer.append(chunk)
             self.on_line_parts_received(self.buffer)
@@ -108,7 +108,7 @@ class TerminalYieldedCommand(AsyncCommand):
                 del self.buffer[:]
                 self.on_line_received(line)
 
-    def handle_exit(self):
+    def handle_exit(self, returncode):
         pass
 
     def on_line_received(self, line):

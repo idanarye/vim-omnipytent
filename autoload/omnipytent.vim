@@ -287,7 +287,7 @@ function! omnipytent#_vimTerminalChannelCallback(channel, msg) abort
     if empty(l:yieldedCommand)
         return
     endif
-    call l:yieldedCommand.tryCall('handle_text_output', split(a:msg, "\10"))
+    call l:yieldedCommand.tryCall('handle_text_output', a:channel, split(a:msg, "\10"))
 endfunction
 
 function! omnipytent#_vimTerminalExitCallback(channel, status) abort
@@ -303,12 +303,10 @@ function! omnipytent#_nvimJobCallback(jobId, data, event) dict abort
     if empty(l:yieldedCommand)
         return
     endif
-    if a:event == 'stdout'
-        call l:yieldedCommand.tryCall('handle_text_output', a:data)
-    elseif a:event == 'stderr'
-        call l:yieldedCommand.tryCall('handle_text_output', a:data)
+    if a:event == 'stdout' || a:event == 'stderr'
+        call l:yieldedCommand.tryCall('handle_text_output', a:event, a:data)
     else
-        call l:yieldedCommand.tryCall('handle_exit')
+        call l:yieldedCommand.tryCall('handle_exit', a:data)
         call omnipytent#_unregisterYieldedCommandForJob(a:jobId)
     endif
 endfunction
