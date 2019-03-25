@@ -27,7 +27,6 @@ class AsyncJob(AsyncCommand):
             ))
 
     def handle_text_output(self, channel, data):
-        print('le text in %s be %r' % (channel, data,))
         buf = self._buffers[channel]
         if not data:
             return
