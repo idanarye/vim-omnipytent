@@ -38,6 +38,7 @@ Configuration:               |g:omnipytent_defaultPythonVersion|
 Running shell commands:      |omnipytent-BANG| |omnipytent-SH|
                             |omnipytent-TERMINAL_PANEL|
                             |omnipytent-TERMINAL_TAB|
+                            |omnipytent-JOB|
                             |omnipytent-ShellCommandExecuter|
 Basic interaction with Vim:  |omnipytent-CMD| |omnipytent-FN| |omnipytent-OPT|
                             |omnipytent-VAR| |omnipytent-vim_eval|
@@ -360,6 +361,19 @@ exposes some helpers to make it easier:
                             convert a string to a regex.
                           * If "target" is callable, it will be used as a
                             predicate on that line.
+                                                                *omnipytent-JOB*
+* "JOB" opens runs a background job. It is an async command
+  (|omnipytent-async-commands|) that you need to yield and it returns itself
+  when done, and have the attribute "ret" set with the exit code and the
+  attributes "out" and "err" filled with STDOUT and STDERR: >
+    @task
+    def run_it(ctx):
+        result = yield JOB('foo', 'bar')
+        if result.ret == 0:
+            print('Success. Output: %s' % result.out)
+        else:
+            print('Failure(%s). Error: %s' % (result.ret, result.err))
+<
 
 All these act as functions that receive the shell command and it's arguments
 ad Python function parameters: >
