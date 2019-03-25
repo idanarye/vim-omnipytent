@@ -27,6 +27,7 @@ class AsyncJob(AsyncCommand):
             ))
 
     def handle_text_output(self, channel, data):
+        print('le text in %s be %r' % (channel, data,))
         buf = self._buffers[channel]
         if not data:
             return
@@ -48,5 +49,5 @@ class AsyncJob(AsyncCommand):
         return self
 
     def handle_exit(self, returncode):
-        self.returncode = returncode
+        self.ret = returncode
         self.run_next_frame('resume')

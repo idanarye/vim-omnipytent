@@ -295,7 +295,9 @@ let g:vimJobsMap = s:vimJobsMap
 function! omnipytent#_vimCreateJob(command) abort
     let l:options = {
                 \ 'out_cb': function('omnipytent#_vimJobChannelCallbackStdout'),
+                \ 'out_mode': 'raw',
                 \ 'err_cb': function('omnipytent#_vimJobChannelCallbackStderr'),
+                \ 'err_mode': 'raw',
                 \ 'exit_cb': function('omnipytent#_vimJobExitCallback'),
                 \ }
     let l:job = job_start(a:command, l:options)
