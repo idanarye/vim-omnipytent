@@ -14,12 +14,11 @@ class Terminal(ShellCommandExecuter):
     if bool(int(vim.eval('exists("*term_start")'))):  # Vim 8
         @staticmethod
         def __start(command):
-            callback = FN['omnipytent#_vimTerminalChannelCallback']
             job_id = FN.term_start(command, dict(
                 curwin=1,
-                out_cb=callback,
-                err_cb=callback,
-                exit_cb=FN['omnipytent#_vimTerminalExitCallback'],
+                out_cb=FN['omnipytent#_vimJobChannelCallbackStdout'],
+                err_cb=FN['omnipytent#_vimJobChannelCallbackStderr'],
+                exit_cb=FN['omnipytent#_vimJobExitCallback'],
             ))
             return job_id
 

@@ -265,12 +265,16 @@ endif
 let s:yieldedCommandForJobs = {}
 
 if has('nvim')
-    function! s:resolveJob(term) abort
-        return a:term
+    function! s:resolveJob(ident) abort
+        return a:ident
     endfunction
 else
-    function! s:resolveJob(term) abort
-        return job_getchannel(term_getjob(a:term))
+    function! s:resolveJob(ident) abort
+        if type(a:ident) == type('') && has_key(s:vimJobsMap, a:ident)
+            return a:ident
+        else
+            return s:jobId(term_getjob(a:ident))
+        endif
     endfunction
 endif
 
@@ -282,20 +286,47 @@ function! omnipytent#_unregisterYieldedCommandForJob(jobId) abort
     call remove(s:yieldedCommandForJobs, s:resolveJob(a:jobId))
 endfunction
 
-function! omnipytent#_vimTerminalChannelCallback(channel, msg) abort
-    let l:yieldedCommand = get(s:yieldedCommandForJobs, a:channel)
-    if empty(l:yieldedCommand)
-        return
-    endif
-    call l:yieldedCommand.tryCall('handle_text_output', a:channel, split(a:msg, "\10"))
+function! s:jobId(job)
+    return printf('j%d', job_info(a:job).process)
 endfunction
 
-function! omnipytent#_vimTerminalExitCallback(channel, status) abort
-    let l:yieldedCommand = get(s:yieldedCommandForJobs, a:channel)
+let s:vimJobsMap = {}
+let g:vimJobsMap = s:vimJobsMap
+function! omnipytent#_vimCreateJob(command) abort
+    let l:options = {
+                \ 'out_cb': function('omnipytent#_vimJobChannelCallbackStdout'),
+                \ 'err_cb': function('omnipytent#_vimJobChannelCallbackStderr'),
+                \ 'exit_cb': function('omnipytent#_vimJobExitCallback'),
+                \ }
+    let l:job = job_start(a:command, l:options)
+    let l:options.job = l:job
+    let l:ident = s:jobId(l:job)
+    let s:vimJobsMap[l:ident] = l:job
+    return l:ident
+endfunction
+
+function! omnipytent#_vimJobChannelCallbackStdout(channel, msg) abort
+    let l:yieldedCommand = get(s:yieldedCommandForJobs, s:jobId(ch_getjob(a:channel)))
     if empty(l:yieldedCommand)
         return
     endif
-    call l:yieldedCommand.tryCall('handle_text_output', split(a:msg, "\10"))
+    call l:yieldedCommand.tryCall('handle_text_output', 'stdout', split(a:msg, "\10"))
+endfunction
+
+function! omnipytent#_vimJobChannelCallbackStderr(channel, msg) abort
+    let l:yieldedCommand = get(s:yieldedCommandForJobs, s:jobId(ch_getjob(a:channel)))
+    if empty(l:yieldedCommand)
+        return
+    endif
+    call l:yieldedCommand.tryCall('handle_text_output', 'stderr', split(a:msg, "\10"))
+endfunction
+
+function! omnipytent#_vimJobExitCallback(job, status) abort
+    let l:yieldedCommand = get(s:yieldedCommandForJobs, s:jobId(a:job))
+    if empty(l:yieldedCommand)
+        return
+    endif
+    call l:yieldedCommand.tryCall('handle_exit', a:status)
 endfunction
 
 function! omnipytent#_nvimJobCallback(jobId, data, event) dict abort

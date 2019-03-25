@@ -14,9 +14,10 @@ class AsyncJob(AsyncCommand):
     def on_yield(self):
         pass
 
-    if bool(int(vim.eval('exists("*term_start")'))):  # Vim 8
-        pass
-    elif bool(int(vim.eval('exists("*termopen")'))):  # Neovim
+    if bool(int(vim.eval('exists("*job_start")'))):  # Vim 8
+        def __create_job_object(self, command):
+            return FN['omnipytent#_vimCreateJob'](command)
+    elif bool(int(vim.eval('exists("*jobstart")'))):  # Neovim
         def __create_job_object(self, command):
             callback = FN['omnipytent#_nvimJobCallback']
             return FN.jobstart(command, dict(
