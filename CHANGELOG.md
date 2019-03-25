@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - For windows task - `<task>.close` to close the window.
 - Bare `:OP` to open a selection UI for picking tasks.
 - `CombineSources` task for combining multiple options tasks.
+- `JOB` for running shell commands in the background.
 
 ### Fixed
 - Package structure in `omnipytent.ext`.

@@ -34,4 +34,25 @@ Describe Async Commands
         Wait b:marker
         Assert readfile('foo') == ['hello']
     End
+
+    It Job
+        CreateTasksfile
+        @task
+        def run_a_job(ctx):
+            VAR['b:marker'] = 0
+            result = yield JOB('sh', '-c', 'sleep 3; echo hello > foo; echo -n ok-output; echo error-output 1>&2; exit 42')
+            VAR['b:marker'] = 1
+            VAR['b:result_ret'] = result.ret
+            VAR['b:result_out'] = result.out
+            VAR['b:result_err'] = result.err
+.
+        OP run_a_job
+        Assert Equals(b:marker, 0)
+        Assert !filereadable('foo')
+        Wait b:marker
+        Assert readfile('foo') == ['hello']
+        Assert b:result_ret == 42
+        Assert b:result_out == 'ok-output'
+        Assert b:result_err == "error-output\n"
+    End
 End

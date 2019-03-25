@@ -34,7 +34,8 @@ class AsyncExecutor(object):
             except StopIteration:
                 pass
             else:
-                self.yielded_command._register(self)
+                self.yielded_command.executor = self
+                self.yielded_command._register()
                 try:
                     self.yielded_command._running_from_async_executor = True
                     self.yielded_command.on_yield()
@@ -47,25 +48,31 @@ class AsyncExecutor(object):
 
 class AsyncCommand(ABC):
     yielded = {}
+    idx = None
+    _returned_value = None
 
     @property
     def vim_obj(self):
         return RawVim.fmt('omnipytent#_yieldedCommand(%s,%s)', sys.version_info[0], self.idx)
 
-    def _register(self, executor):
-        self.executor = executor
-        self.idx = next(_IDX_COUNTER)
-        self.yielded[self.idx] = self
-        self._returned_value = None
+    def _register(self):
+        if self.idx is None:
+            self.idx = next(_IDX_COUNTER)
+            self.yielded[self.idx] = self
 
     def _unregister(self):
         del self.yielded[self.idx]
+        self.idx = None
 
     def call(self, method, args):
         return getattr(self, method)(*args)
 
+    def _resolve_returned_value(self, returned_value):
+        """Override if the returned value is not something you can easily pass through Vimscript"""
+        return returned_value
+
     def resume(self, returned_value=None):
-        self._returned_value = returned_value
+        self._returned_value = self._resolve_returned_value(returned_value)
         if self._running_from_async_executor:
             raise AbortAsyncCommand
         else:

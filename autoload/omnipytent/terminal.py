@@ -14,12 +14,11 @@ class Terminal(ShellCommandExecuter):
     if bool(int(vim.eval('exists("*term_start")'))):  # Vim 8
         @staticmethod
         def __start(command):
-            callback = FN['omnipytent#_vimTerminalChannelCallback']
             job_id = FN.term_start(command, dict(
                 curwin=1,
-                out_cb=callback,
-                err_cb=callback,
-                exit_cb=FN['omnipytent#_vimTerminalExitCallback'],
+                out_cb=FN['omnipytent#_vimJobChannelCallbackStdout'],
+                err_cb=FN['omnipytent#_vimJobChannelCallbackStderr'],
+                exit_cb=FN['omnipytent#_vimJobExitCallback'],
             ))
             return job_id
 
@@ -42,7 +41,7 @@ class Terminal(ShellCommandExecuter):
     elif bool(int(vim.eval('exists("*termopen")'))):  # Neovim
         @staticmethod
         def __start(command):
-            callback = FN['omnipytent#_nvimTerminalCallback']
+            callback = FN['omnipytent#_nvimJobCallback']
             job_id = FN.termopen(command, dict(
                 on_stdout=callback,
                 on_stderr=callback,
@@ -98,7 +97,7 @@ class TerminalYieldedCommand(AsyncCommand):
         FN['omnipytent#_unregisterYieldedCommandForJob'](self.terminal.job_id)
         super(TerminalYieldedCommand, self).resume(returned_value=returned_value)
 
-    def handle_text_output(self, data):
+    def handle_text_output(self, channel, data):
         for chunk in data:
             self.buffer.append(chunk)
             self.on_line_parts_received(self.buffer)
@@ -108,7 +107,7 @@ class TerminalYieldedCommand(AsyncCommand):
                 del self.buffer[:]
                 self.on_line_received(line)
 
-    def handle_exit(self):
+    def handle_exit(self, returncode):
         pass
 
     def on_line_received(self, line):
