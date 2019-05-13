@@ -40,7 +40,14 @@ class FZF(SelectionUI):
             self.preview_server_cm = None
 
         params['options'] = ' '.join(map(str, flags))
+        prev_buf = vim.current.buffer.number
         FN['fzf#run'](params)
+        if not int(vim.eval('has("nvim")')):
+            pass  # not needed in Vim
+        elif prev_buf == vim.current.buffer.number:
+            pass # for some reason did not change terminal
+        elif vim.current.buffer.options['buftype'] == 'terminal':
+            FN['omnipytent#_startinsertIn'](10)
 
     def finish(self, choice):
         if self.preview_server_cm:

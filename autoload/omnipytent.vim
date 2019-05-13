@@ -343,3 +343,11 @@ function! omnipytent#_nvimJobCallback(jobId, data, event) dict abort
         call omnipytent#_unregisterYieldedCommandForJob(a:jobId)
     endif
 endfunction
+
+function! s:callStartinsert(...) abort
+    startinsert
+endfunction
+
+function! omnipytent#_startinsertIn(numMSecs) abort
+    call timer_start(10, function('s:callStartinsert'))
+endfunction
