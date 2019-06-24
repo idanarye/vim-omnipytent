@@ -64,6 +64,7 @@ function! s:CreateWaitCommand(predExpr) abort
                 \ '        throw "Timeout while waiting for " . ' . string(l:predExpr),
                 \ '    endif',
                 \ '    sleep ' . string(l:sleep) . ' m',
+                \ '    call feedkeys("", "x")',
                 \ 'endwhile',
                 \ ], "\n")
 endfunction

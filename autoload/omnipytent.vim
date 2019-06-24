@@ -220,6 +220,20 @@ function! s:YieldedCommandClass.tryCall(method, ...) dict
     return l:return
 endfunction
 
+function! s:YieldedCommandClass._resumeExecutionInProperContex() dict
+    let l:command = printf(":call omnipytent#_yieldedCommand(%d, %d)._resumeExecution()\<Cr>", self.pythonVersion, self.idx)
+    if mode() == 'i'
+        let l:command = "\<C-o>" . l:command
+    elseif mode() == 'v'
+        let l:command = "\<C-u>" . l:command
+    endif
+    call feedkeys(l:command, 'n')
+endfunction
+function! s:YieldedCommandClass._resumeExecution() dict abort range
+    let l:idx = self.idx
+    execute s:apiEntryPointCommand(self.pythonVersion, 'resume')
+endfunction
+
 function! omnipytent#_yieldedCommand(pythonVersion, idx)
     let l:obj = copy(s:YieldedCommandClass)
     let l:obj.pythonVersion = a:pythonVersion
@@ -305,6 +319,10 @@ function! omnipytent#_vimCreateJob(command) abort
     let l:ident = s:jobId(l:job)
     let s:vimJobsMap[l:ident] = l:job
     return l:ident
+endfunction
+
+function! omnipytent#_resumeInFixedContext(pythonVersion, asyncCommandIdx) abort
+    execute s:apiEntryPointCommand(pythonVersion, 'resume')
 endfunction
 
 function! omnipytent#_vimJobChannelCallbackStdout(channel, msg) abort

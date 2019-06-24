@@ -76,8 +76,8 @@ class AsyncCommand(ABC):
         if self._running_from_async_executor:
             raise AbortAsyncCommand
         else:
-            self._unregister()
-            self.executor.run_next()
+            vim.command('call %s._resumeExecutionInProperContex()' % (self.vim_obj,))
+            self.vim_obj
 
     def run_next_frame(self, method, *args):
         vim.command('call omnipytent#_addNextFrameCommand(%s, %s, %s)' % (

@@ -33,6 +33,11 @@ def _api_entry_point(command):
         else:
             result = command.call(method, args)
         vim.command('let l:return = %s' % vim_repr(result))
+    elif command == 'resume':
+        idx = int(vim.eval('l:idx'))
+        command = AsyncCommand.yielded[idx]
+        command._unregister()
+        command.executor.run_next()
     elif command == 'edit':
         split_mode = vim.eval('a:splitMode')
         args = vim.eval('a:000')

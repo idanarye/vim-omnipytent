@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - CtrlP selection UI with `fmt` and multiple entries that have the same `fmt`.
 - A weird `bytes`/`str` problem with `CHOOSE`.
 - FZF not always starting in insert mode in Neovim.
+- Weird behaviors (mostly swallowed `echo`s/`print`s) when resuming async operations.
 
 ## 1.3.0 - 2018-11-16
 ### Added
