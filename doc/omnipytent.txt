@@ -997,10 +997,10 @@ The selection is performed by invoking another plugin - FZF, Deinte, Unite or
 CtrlP. If none of these plugins is available, an |inputlist()| based solution
 is used.
 
-You can control the choice of selection UI by setting *g:omnipytent_filePrefix*
-to "fzf", "denite", "unite", "ctrlp" or "inputlist". Or, if you implement your
-own selection UI as a Python class, you can set it to the fully qualified name
-of that class.
+You can control the choice of selection UI by setting
+*g:omnipytent_selectionUI* to "fzf", "denite", "unite", "ctrlp" or "inputlist".
+Or, if you implement your own selection UI as a Python class, you can set it to
+the fully qualified name of that class.
 
 
 OTHER HELPERS              *omnipytent-other-helpers* *omnipytent-utils-module*
