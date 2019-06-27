@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Bare `:OP` to open a selection UI for picking tasks.
 - `CombineSources` task for combining multiple options tasks.
 - `JOB` for running shell commands in the background.
+- `add_alias` and `add_subtask_alias` for adding aliases to existing tasks.
 
 ### Fixed
 - Package structure in `omnipytent.ext`.

@@ -36,13 +36,6 @@ class TaskMeta(type):
         cls._task_varargs = argspec.varargs
         cls._special_args = OrderedDict()
 
-        # if not alias:
-        # cls.alias = []
-        # elif isinstance(alias, str):
-        # cls.aliases = alias.split()
-        # else:
-        # cls.aliases = list(alias)
-
         cls.__handle_special_args(argspec)
 
         cls._cls_init_()
@@ -111,6 +104,17 @@ class Task(object):
             yield dependency
 
     @classmethod
+    def add_alias(cls, *aliases):
+        if isinstance(cls.alias, str):
+            cls.alias = cls.alias.split()
+        elif not isinstance(cls.alias, list):
+            cls.alias = list(cls.alias)
+        cls.alias.extend(
+            alias
+            for joind_alias in aliases
+            for alias in joind_alias.split())
+
+    @classmethod
     def subtask(cls, name, alias=[], doc=None):
         def inner(func):
             cls._subtasks[name] = type(Task)(
@@ -130,6 +134,17 @@ class Task(object):
             inner(func)
         else:
             raise TypeError('Bad paramter for subtask %r' % (name,))
+
+
+    @classmethod
+    def add_subtask_alias(cls, subtask_name, *aliases):
+        try:
+            subtask = cls._subtasks[subtask_name]
+        except KeyError:
+            raise Exception('%r has no subtask named %r' % (cls.__name__, subtask_name))
+        else:
+            subtask.add_alias(*aliases)
+
 
     def completions(self, ctx):
         result = set()

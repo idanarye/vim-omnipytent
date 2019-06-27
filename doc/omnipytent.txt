@@ -883,6 +883,28 @@ Then, in your .vimrc: >
 And you'll have keymaps for setting the action and the animal. "run" is generic
 and common enough to have its own dedicated keymap without needing an alias.
 
+                                                        *omnipytent-add_alias*
+You can add aliases to existing tasks using the "add_alias" method: >
+    @task
+    def run(ctx, animal=choose_animal, action=choose_action):
+        ...
+    run.add_alias('also-run')
+<
+"add_alias" can accept multiple arguments and/or space separated strings to add
+multiple aliases with a single command. "add_alias" is useful for tasks you
+import from extension modules (see |omnipytent.ext|)
+                                                *omnipytent-add_subtask_alias*
+You can add aliases to a subtask using the "add_subtask_alias" command. This is
+useful for special tasks that define their own subtasks: >
+    @task.window
+    def open_shell(ctx):
+        shell = local['bash'] & TERMINAL_PANEL
+        ctx.pass_data(shell)
+    open_shell.add_subtask_alias('close', 'close_shell')
+<
+"add_subtask_alias" can add multiple aliases with a single command the same way
+"add_alias" does.
+
 TASK ARGUMENT COMPLETION                 *omnipytent-task-argument-completion*
 
 You can define autocompletion for your task arguments. Use the task's
