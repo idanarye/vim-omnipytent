@@ -115,14 +115,16 @@ class Task(object):
             for alias in joind_alias.split())
 
     @classmethod
-    def subtask(cls, name, alias=[], doc=None):
+    def subtask(cls, name, alias=None, doc=None):
         def inner(func):
             cls._subtasks[name] = type(Task)(
                 cls._format_subtask_full_name(cls.__name__, name),
                 (Task,),
                 dict(
                     _func_=func,
-                    alias=alias,
+                    # NOTE: If we had [] as default argument, appending aliases
+                    # to it would be global (for all tasks)...
+                    alias=alias or [],
                     __doc__=doc,
                 ))
 
