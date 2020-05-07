@@ -1,12 +1,13 @@
 import inspect
 from collections import OrderedDict
+import sys
 
 import vim
 
 from .base_task import Task
 from .context import InvocationContext
 from .hacks import function_locals
-from .util import other_windows, is_generator_callable, bare_func_wrapper
+from .util import other_windows, is_generator_callable, bare_func_wrapper, vim_repr
 
 
 class OptionsTask(Task):
@@ -380,3 +381,147 @@ class CombineSources(OptionsTask):
         return self.__redirector('_value', item)
 
     # TODO: - add `_score()`?
+
+
+class DataCellTask(Task):
+    _CONCRETE_ = False
+
+    _transform = staticmethod(lambda txt: txt)
+
+    @classmethod
+    def transform(cls, transform):
+        cls._transform = staticmethod(transform)
+
+    @staticmethod
+    def _cls_modify_dct_(dct):
+        try:
+            transform = dct.pop('transform')
+        except KeyError:
+            pass
+        else:
+            dct['_transform'] = staticmethod(transform)
+
+    @classmethod
+    def _cls_init_(cls):
+        if not cls._CONCRETE_:
+            return
+
+        cls.subtask(bare_func_wrapper(cls.update_cache))
+        cls.subtask(bare_func_wrapper(cls.clear))
+
+    @classmethod
+    def update_cache(cls, self):
+        cache = self.task_file.get_task_cache(cls)
+        assert vim.current.buffer == cache.already_opened_buffer
+        cache.textual_content = '\n'.join(vim.current.buffer)
+
+    @classmethod
+    def clear(cls, self):
+        cache = self.task_file.get_task_cache(cls)
+        try:
+            del cache.textual_content
+        except AttributeError:
+            pass
+
+    def invoke(self, *args):
+        if self.is_main:
+            window = self.__get_window_of_buffer()
+            if window:
+                self.__go_to_window(window)
+            else:
+                for yielded_value in self.__open_buffer(*args):
+                    yield yielded_value
+        else:
+            textual_content = self.__get_textual_content()
+            if textual_content is None:
+                for yielded_value in self.__open_buffer(*args):
+                    yield yielded_value
+
+                # Return from yield doesn't work here, and it's easier to use a cell than to add that support
+                cell = [None]
+
+                def set_cell():
+                    cell[0] = '\n'.join(vim.current.buffer)
+                from .async_execution import WAIT_FOR_AUTOCMD
+                yield WAIT_FOR_AUTOCMD('BufDelete <buffer>', set_cell)
+                textual_content, = cell
+
+            self.pass_data(self._transform(textual_content))
+
+    def __get_textual_content(self):
+        window = self.__get_window_of_buffer()
+        if window:
+            return '\n'.join(window.buffer)
+        try:
+            return self.cache.textual_content
+        except AttributeError:
+            return None
+
+    def __get_window_of_buffer(self):
+        try:
+            already_opened_buffer = self.cache.already_opened_buffer
+        except AttributeError:
+            return None
+        matching_windows = [
+            window
+            for window in vim.windows
+            if window.buffer == already_opened_buffer]
+        if not matching_windows:
+            return None
+        assert already_opened_buffer.options['buftype'] == 'nofile'
+        matching_windows.sort(key=lambda w: w.tabpage == vim.current.tabpage, reverse=True)
+        return matching_windows[0]
+
+    def __go_to_window(self, window):
+        if window.tabpage != vim.current.tabpage:
+            vim.command('tabnext %d' % window.tabpage.number)
+        vim.command('%dwincmd w' % window.number)
+
+    def __open_buffer(self, *args):
+        try:
+            already_opened_buffer = self.cache.already_opened_buffer
+        except AttributeError:
+            already_opened_buffer = None
+        else:
+            matching_windows = [
+                window
+                for window in vim.windows
+                if window.buffer == already_opened_buffer ]
+            if not matching_windows:
+                already_opened_buffer = None
+            else:
+                assert already_opened_buffer.options['buftype'] == 'nofile'
+                matching_windows.sort(key=lambda w: w.tabpage == vim.current.tabpage, reverse=True)
+                window = matching_windows[0]
+                if window.tabpage != vim.current.tabpage:
+                    vim.command('tabnext %d' % window.tabpage.number)
+                vim.command('%dwincmd w' % window.number)
+                return
+
+        try:
+            textual_content = self.cache.textual_content
+        except AttributeError:
+            textual_content = ''
+
+        for yielded_value in super(DataCellTask, self).invoke(*args):
+            yield yielded_value
+
+        assert vim.current.buffer[:] == [''], 'created buffer is not empty'
+        buftype = vim.current.buffer.options['buftype']
+        if buftype != 'nofile':
+            assert buftype == '', 'expected regular or nofile buffer - got %s' % (buftype,)
+            assert not vim.current.buffer.name, 'created buffer attached to a file'
+            vim.current.buffer.options['buftype'] = 'nofile'
+
+        vim.command('autocmd omnipytent BufDelete <buffer> call omnipytent#invoke(%s, line("."), line("."), -1, %s)' % (
+            sys.version_info.major,
+            vim_repr(self._subtasks['update_cache'].__name__),
+        ))
+
+        vim.current.buffer[:] = textual_content.splitlines()
+        self.cache.already_opened_buffer = vim.current.buffer
+
+    def __invoke_dep(self, *args):
+        self.pass_data('hello')
+        if False:
+            yield

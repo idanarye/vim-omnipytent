@@ -216,3 +216,15 @@ def CHOOSE(source, multi=False, prompt=None, fmt=str, preview=None, score=None):
 
     return selection_ui_cls(source=source, multi=multi, prompt=prompt, fmt=fmt, preview=preview, score=score)
 
+
+class WAIT_FOR_AUTOCMD(AsyncCommand):
+    def __init__(self, autocmd, before_resume=lambda: None):
+        self.autocmd = autocmd
+        self.before_resume = before_resume
+
+    def on_yield(self):
+        vim.command('autocmd omnipytent %s ++once call %s.call("proceed")' % (
+            self.autocmd, self.vim_obj))
+
+    def proceed(self):
+        self.resume(self.before_resume())

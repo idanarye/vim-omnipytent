@@ -1,0 +1,74 @@
+Describe Data cell
+    Before each
+        call PrepareForTest()
+    End
+
+    It Data cell
+        CreateTasksfile
+        @task.data_cell
+        def cell(ctx):
+            CMD.new()
+            VAR['b:iAmCell'] = 'I am cell'
+
+        @task
+        def dump_cell_data(ctx, data=cell):
+            VAR['b:dataFromCell'] = data
+.
+
+        OP dump_cell_data
+        Assert b:iAmCell == 'I am cell'
+        call setline(1, 'hello')
+        close
+        Assert !exists('b:iAmCell')
+        Assert !exists('g:dataFromCell')
+        ProcessAyncEvents
+        Assert b:dataFromCell == 'hello'
+
+        OP cell
+        " Because we are in the cell now:
+        Assert !exists('g:dataFromCell')
+        call append('$', 'world')
+        OP dump_cell_data
+        Assert b:dataFromCell == "hello\nworld"
+
+        call append('$', 'howdy')
+        close
+        OP dump_cell_data
+        Assert b:dataFromCell == "hello\nworld\nhowdy"
+    End
+
+    It Data cell transform
+        CreateTasksfile
+        @task.data_cell(transform=int)
+        def cell1(ctx):
+            CMD.new()
+
+
+        @task.data_cell
+        def cell2(ctx):
+            CMD.new()
+
+        cell2.transform(float)
+
+
+        @task
+        def dump_cell_data(ctx, c1=cell1, c2=cell2):
+            VAR['b:cell1'] = c1
+            VAR['b:cell2'] = c2
+.
+
+        OP cell1
+        call setline(1, '1')
+        close
+
+        OP cell2
+        call setline(2, '2.3')
+        close
+
+        OP dump_cell_data
+        Assert b:cell1 == 1
+        Assert type(b:cell1) == type(1)
+        Assert b:cell2 == 2.3
+        Assert type(b:cell2) == type(2.3)
+    End
+End

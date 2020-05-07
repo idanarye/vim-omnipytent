@@ -39,6 +39,8 @@ endfunction
 
 command! CreateTasksfile execute 'OPedit' | append | call s:CreateTasksfileAfter()
 
+command! -bar ProcessAyncEvents call feedkeys('', 'x')
+
 function! s:CreateWaitCommand(predExpr) abort
     let l:sleep = 0.1
     let l:timeout = 10
@@ -64,7 +66,7 @@ function! s:CreateWaitCommand(predExpr) abort
                 \ '        throw "Timeout while waiting for " . ' . string(l:predExpr),
                 \ '    endif',
                 \ '    sleep ' . string(l:sleep) . ' m',
-                \ '    call feedkeys("", "x")',
+                \ '    ProcessAyncEvents',
                 \ 'endwhile',
                 \ ], "\n")
 endfunction

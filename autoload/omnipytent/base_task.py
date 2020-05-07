@@ -88,6 +88,10 @@ class TaskMeta(type):
 class Task(object):
     _CONCRETE_ = False
 
+    @staticmethod
+    def _cls_modify_dct_(dct):
+        """Override to modift the dictionrary before creating the class"""
+
     @classmethod
     def _cls_init_(cls):
         """Override to initialize the task class"""

@@ -2,7 +2,7 @@ import types
 import inspect
 from functools import wraps
 
-from .tasks import Task, OptionsTask, WindowTask
+from .tasks import Task, OptionsTask, WindowTask, DataCellTask
 
 
 def _fluent(func):
@@ -42,13 +42,13 @@ class TaskDeclarator:
             func = staticmethod(func)
             func.__name__ = name
 
-        result = type(self._task_class)(
-            func.__name__,
-            (self._task_class,),
-            dict(self._params,
-                 _func_=func,
-                 dependencies=self._dependencies,
-                 completers=self._completers))
+        dct = dict(
+            self._params,
+            _func_=func,
+            dependencies=self._dependencies,
+            completers=self._completers)
+        self._task_class._cls_modify_dct_(dct)
+        result = type(self._task_class)(func.__name__, (self._task_class,), dct)
         return result
 
     @_fluent
@@ -81,6 +81,11 @@ class TaskDeclarator:
     @_fluent
     def window(self):
         self._task_class = WindowTask
+
+    @property
+    @_fluent
+    def data_cell(self):
+        self._task_class = DataCellTask
 
 
 task = TaskDeclarator()

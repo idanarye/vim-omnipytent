@@ -46,7 +46,7 @@ Basic interaction with Vim:  |omnipytent-CMD| |omnipytent-FN| |omnipytent-OPT|
 Task dependencies:           |omnipytent-task-dependencies|
                             |omnipytent-pass_data| |omnipytent-dep|
 Special tasks:               |omnipytent-options-task| |omnipytent-window-task|
-                            |omnipytent-CombineSources|
+                            |omnipytent-CombineSources| |omnipytent-data-cell-task|
 Task aliases                 |omnipytent-task-aliases|
 Task argument completion:    |omnipytent-task-argument-completion|
                             |omnipytent-dir_completer|
@@ -505,6 +505,14 @@ The "omnipytent" module exposes some async commands:
   * "score":   Score function to sort the list of items so that higher scored
                items appear first.
 
+                                                 *omnipytent-WAIT_FOR_AUTOCMD*
+* "WAIT_FOR_AUTOCMD" simply waits for an |autocmd-event|. It receives two
+  positional arguments: the autocommand+pattern (e.g. "BufDelete <buffer>") and
+  an optional function for generating the yield result. Note that execution
+  will be resumed after the autocmd handling is finished, so if you need to do
+  anything inside the context of the autocmd handling you should do it with
+  that function you can pass as second argument.
+
 To support nesting in Python 2, yielding a generator is equivalent to yielding
 from a generator: >
     @task
@@ -823,6 +831,39 @@ them: >
 You can close the window by appending ".close" to the task name: >
     OP open_shell.close
 <
+
+DATA CELL TASK                                     *omnipytent-data-cell-task*
+
+A data cell task is a user editable cached source of data for usage in other
+tasks. It is useful for defining an easy UI for requests and commands used by
+other tasks: >
+    @task.data_cell(transform=yaml.safe_load)
+    def request_data(ctx):
+        CMD.new()
+        VAR['filetype'] = 'yaml'
+
+
+    def send_request(ctx, data=request_data):
+        send_the_request(url, data)
+<
+
+The data cell task must open a new, empty buffer that's not associated with any
+file, and can prepare it for aiding the data entry (e.g. set filetype). When
+invoked as dependency the buffer will not be reopened if it was opened before -
+instead the last value will be used. There is no need to close the buffer,
+though, for any changes to take effect - when used as dependency the text will
+be read directly from the buffer if its open.
+
+The text can be transformed before passed to the dependant by using the
+"transform" keyword arguments (like in the example above) or like this: >
+    @task.data_cell
+    def request_data(ctx):
+        CMD.new()
+        VAR['filetype'] = 'yaml'
+    request_data.transform(yaml.safe_load)
+<
+If no transformation is given, the data will be passed as a string.
+
 
 TASK ALIASES                                         *omnipytent-task-aliases*
 
