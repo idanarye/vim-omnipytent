@@ -864,6 +864,22 @@ The text can be transformed before passed to the dependant by using the
 <
 If no transformation is given, the data will be passed as a string.
 
+A default text can be assigned to the "default_content" attribute of the task: >
+    @task.data_cell
+    def request_data(ctx):
+        CMD.new()
+        VAR['filetype'] = 'yaml'
+    request_data.default_content = dedent("""
+        foo: bar
+        baz:
+          - qux
+    """)
+<
+If no default content is given, the cell will be empty. Note that default
+content only applies to the first invocation and to invocations after
+"<task_name>.clear" - otherwise the content of the cell will be retrieved from
+the in-memory cache.
+
 
 TASK ALIASES                                         *omnipytent-task-aliases*
 

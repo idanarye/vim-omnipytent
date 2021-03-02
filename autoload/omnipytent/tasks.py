@@ -387,6 +387,7 @@ class DataCellTask(Task):
     _CONCRETE_ = False
 
     _transform = staticmethod(lambda txt: txt)
+    default_content = ''
 
     @classmethod
     def transform(cls, transform):
@@ -501,7 +502,7 @@ class DataCellTask(Task):
         try:
             textual_content = self.cache.textual_content
         except AttributeError:
-            textual_content = ''
+            textual_content = self.default_content
 
         for yielded_value in super(DataCellTask, self).invoke(*args):
             yield yielded_value
