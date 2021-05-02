@@ -12,7 +12,7 @@ from omnipytent.execution import ShellCommandExecuter, quote
 if int(vim.eval('has("win32")')):
     def __format_env_vars(cmd):
         try:
-            env_vars = cmd.envvars
+            env_vars = cmd.env
         except AttributeError:
             return
 
@@ -22,7 +22,7 @@ if int(vim.eval('has("win32")')):
 else:
     def __format_env_vars(cmd):
         try:
-            env_vars = cmd.envvars
+            env_vars = cmd.env
         except AttributeError:
             return
 

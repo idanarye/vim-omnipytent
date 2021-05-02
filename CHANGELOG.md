@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - A weird `bytes`/`str` problem with `CHOOSE`.
 - FZF not always starting in insert mode in Neovim.
 - Weird behaviors (mostly swallowed `echo`s/`print`s) when resuming async operations.
+- Match Plumbum's `envvar` -> `env` change.
 
 ## 1.3.0 - 2018-11-16
 ### Added
