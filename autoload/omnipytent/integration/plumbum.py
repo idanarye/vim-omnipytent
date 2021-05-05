@@ -15,6 +15,8 @@ if int(vim.eval('has("win32")')):
             env_vars = cmd.env
         except AttributeError:
             return
+        if not env_vars:
+            return
 
         yield 'cmd'
         yield '/c'
@@ -24,6 +26,8 @@ else:
         try:
             env_vars = cmd.env
         except AttributeError:
+            return
+        if not env_vars:
             return
 
         for k, v in env_vars.items():
