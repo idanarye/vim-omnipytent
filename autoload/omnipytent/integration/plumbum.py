@@ -8,13 +8,19 @@ from plumbum import local  # not used here, but users are expected to import it
 
 from omnipytent.execution import ShellCommandExecuter, quote
 
+__ENV_VARS_POSSIBLE_ATTR_NAMES = ('env', 'envvars')
+
+def __get_env_vars(cmd):
+    result = {}
+    for attr_name in __ENV_VARS_POSSIBLE_ATTR_NAMES:
+        env_vars = getattr(cmd, attr_name, None)
+        if env_vars:
+            result.update(env_vars)
+    return result
 
 if int(vim.eval('has("win32")')):
     def __format_env_vars(cmd):
-        try:
-            env_vars = cmd.env
-        except AttributeError:
-            return
+        env_vars = __get_env_vars(cmd)
         if not env_vars:
             return
 
@@ -23,10 +29,7 @@ if int(vim.eval('has("win32")')):
         yield quote(''.join('set %s=%s&&' % pair for pair in env_vars.items()))
 else:
     def __format_env_vars(cmd):
-        try:
-            env_vars = cmd.env
-        except AttributeError:
-            return
+        env_vars = __get_env_vars(cmd)
         if not env_vars:
             return
 
