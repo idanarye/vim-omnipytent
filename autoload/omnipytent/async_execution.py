@@ -157,7 +157,13 @@ class INPUT_BUFFER(AsyncCommand):
         if findstart:
             return self.complete_findstart()
         else:
-            return list(self.complete(base))
+            result = self.complete(base)
+            if result is None:
+                return None
+            elif isinstance(result, str):
+                return [result]
+            else:
+                return list(result)
 
     def save_buffer_content(self):
         self.content = self.buffer[:]
