@@ -114,12 +114,15 @@ class INPUT_BUFFER(AsyncCommand):
                 for m in pattern.finditer(prefix):
                     if m.end() == len(prefix):
                         return m.start()
-                return -3
         if callable(complete_findstart):
             def complete_findstart(orig=complete_findstart):
                 cursor_col = vim.current.window.cursor[1]
                 prefix = vim.current.line[:cursor_col]
-                return orig(prefix)
+                start = orig(prefix)
+                if isinstance(start, int):
+                    return start
+                else:
+                    return -3
 
         self.complete_findstart = complete_findstart
 
