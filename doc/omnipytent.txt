@@ -499,9 +499,10 @@ The "omnipytent" module exposes some async commands:
                           completed. Needs to return the output described in
                           |complete-functions| when findstart=0.
                           Can be a generator.
-  * "complete_findstart": A function that will be called without arguments to
-                          find the completion starts, as described in
-                          |complete-function| when findstart=1.
+  * "complete_findstart": A function that will be called to find the completion
+                          starts, as described in |complete-function| when
+                          findstart=1. It will be called with the line in the
+                          buffer cut right before the cursor.
                           Can also be a regex or a string, which will be
                           converted to a regex - in which case it'll find the
                           start of the match that ends with the cursor. That
