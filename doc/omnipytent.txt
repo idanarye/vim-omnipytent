@@ -488,10 +488,24 @@ The "omnipytent" module exposes some async commands:
                                                      *omnipytent-INPUT_BUFFER*
 * "INPUT_BUFFER" opens a buffer. Returns when the user closes the buffer, with
   the text written there. Accepts the following arguments:
-  * "text":     Initial text of the input buffer.
-  * "filetype": The filetype of the buffer.
-  * "init":     If callable - will be called after the buffer's creation.
-                If string - will be invoked as a Vim command.
+  * "text":               Initial text of the input buffer.
+  * "filetype":           The filetype of the buffer.
+  * "init":               If callable - will be called after the buffer's
+                          creation.
+                          If string - will be invoked as a Vim command.
+  * "complete":           A completion function mapped to |completefunc| inside
+                          the buffer.
+                          Receives the "base" - the part of the text being
+                          completed. Needs to return the output described in
+                          |complete-functions| when findstart=0.
+                          Can be a generator.
+  * "complete_findstart": A function that will be called without arguments to
+                          find the completion starts, as described in
+                          |complete-function| when findstart=1.
+                          Can also be a regex or a string, which will be
+                          converted to a regex - in which case it'll find the
+                          start of the match that ends with the cursor. That
+                          match will ignore the characters after the cursor.
                                                            *omnipytent-CHOOSE*
 * "CHOOSE" Uses |omnipytent-selection-ui| to choose from the specified options.
   Accepts the following arguments:

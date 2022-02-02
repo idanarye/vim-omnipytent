@@ -369,3 +369,7 @@ endfunction
 function! omnipytent#_startinsertIn(numMSecs) abort
     call timer_start(10, function('s:callStartinsert'))
 endfunction
+
+function! omnipytent#_callBufferCompleteFunction(findstart, base) abort
+    return b:.omnipytent_completeFunction(a:findstart, a:base)
+endfunction

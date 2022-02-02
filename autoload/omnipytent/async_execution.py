@@ -2,6 +2,7 @@ from itertools import count
 import vim
 import sys
 import importlib
+import re
 
 try:
     from abc import ABC
@@ -91,15 +92,33 @@ class AsyncCommand(ABC):
 
 
 class INPUT_BUFFER(AsyncCommand):
-    def __init__(self,
-                 text=None,
-                 filetype=None,
-                 init=None):
+    def __init__(
+        self,
+        text=None,
+        filetype=None,
+        init=None,
+        complete=None,
+        complete_findstart=r'\w+',
+    ):
         if isinstance(text, str):
             text = text.splitlines()
         self.text = text
         self.filetype = filetype
         self.init = init
+        self.complete = complete
+
+        if isinstance(complete_findstart, str):
+            complete_findstart = re.compile(complete_findstart)
+        if isinstance(complete_findstart, re.Pattern):
+            def complete_findstart(pattern=complete_findstart):
+                cursor_col = vim.current.window.cursor[1]
+                prefix = vim.current.line[:cursor_col]
+                for m in pattern.finditer(prefix):
+                    if m.end() == cursor_col:
+                        return m.start()
+                return -3
+
+        self.complete_findstart = complete_findstart
 
     def on_yield(self):
         vim.command('belowright 10new')
@@ -117,6 +136,22 @@ class INPUT_BUFFER(AsyncCommand):
         else:
             raise TypeError('Expected `init` to be callable or string - not %s' % (type(self.init)),)
         vim.command('autocmd omnipytent BufDelete <buffer> call %s.call("save_buffer_content")' % self.vim_obj)
+
+        if self.complete:
+            vim.command(
+                """
+                function b:.omnipytent_completeFunction(findstart, base) abort
+                    return %s.call("_complete", a:findstart, a:base)
+                endfunction
+                """ % self.vim_obj)
+            vim.command('setlocal completefunc=omnipytent#_callBufferCompleteFunction')
+            #  vim.command('autocmd omnipytent BufDelete <buffer> call %s.call("save_buffer_content")' % self.vim_obj)
+
+    def _complete(self, findstart, base):
+        if findstart:
+            return self.complete_findstart()
+        else:
+            return list(self.complete(base))
 
     def save_buffer_content(self):
         self.content = self.buffer[:]
