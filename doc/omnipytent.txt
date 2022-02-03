@@ -507,6 +507,17 @@ The "omnipytent" module exposes some async commands:
                           converted to a regex - in which case it'll find the
                           start of the match that ends with the cursor. That
                           match will ignore the characters after the cursor.
+  Before yielding the object, methods can be used to farther customize it: >
+      inp_buf = INPUT_BUFFER('some text')
+
+      @inp_buf.buffer_command
+      def MyCommand():
+          """
+          A buffer local command that will be accessible in the input buffer.
+          """
+
+      result = yield inp_buf
+<
                                                            *omnipytent-CHOOSE*
 * "CHOOSE" Uses |omnipytent-selection-ui| to choose from the specified options.
   Accepts the following arguments:

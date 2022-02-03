@@ -102,10 +102,11 @@ class INPUT_BUFFER(AsyncCommand):
     ):
         if isinstance(text, str):
             text = text.splitlines()
-        self.text = text
-        self.filetype = filetype
-        self.init = init
-        self.complete = complete
+        self._text = text
+        self._filetype = filetype
+        self._init = init
+        self._complete = complete
+        self._buffer_commands = {}
 
         if isinstance(complete_findstart, str):
             complete_findstart = re.compile(complete_findstart)
@@ -129,21 +130,21 @@ class INPUT_BUFFER(AsyncCommand):
     def on_yield(self):
         vim.command('belowright 10new')
         self.buffer = vim.current.buffer
-        self.buffer[:] = self.text
+        self.buffer[:] = self._text
         vim.command('set buftype=nofile')
-        if self.filetype:
-            VAR['&filetype'] = self.filetype
-        if not self.init:
+        if self._filetype:
+            VAR['&filetype'] = self._filetype
+        if not self._init:
             pass
-        elif callable(self.init):
-            self.init()
-        elif isinstance(self.init, str):
-            vim.command(self.init)
+        elif callable(self._init):
+            self._init()
+        elif isinstance(self._init, str):
+            vim.command(self._init)
         else:
-            raise TypeError('Expected `init` to be callable or string - not %s' % (type(self.init)),)
+            raise TypeError('Expected `init` to be callable or string - not %s' % (type(self._init)),)
         vim.command('autocmd omnipytent BufDelete <buffer> call %s.call("save_buffer_content")' % self.vim_obj)
 
-        if self.complete:
+        if self._complete:
             vim.command(
                 """
                 function b:.omnipytent_completeFunction(findstart, base) abort
@@ -153,11 +154,18 @@ class INPUT_BUFFER(AsyncCommand):
             vim.command('setlocal completefunc=omnipytent#_callBufferCompleteFunction')
             #  vim.command('autocmd omnipytent BufDelete <buffer> call %s.call("save_buffer_content")' % self.vim_obj)
 
+        for command_name in self._buffer_commands.keys():
+            vim.command('command -buffer %s call %s.call("run_buffer_command", %r)' % (
+                command_name,
+                self.vim_obj,
+                command_name,
+            ))
+
     def _complete(self, findstart, base):
         if findstart:
             return self.complete_findstart()
         else:
-            result = self.complete(base)
+            result = self._complete(base)
             if result is None:
                 return None
             elif isinstance(result, str):
@@ -171,6 +179,12 @@ class INPUT_BUFFER(AsyncCommand):
 
     def resume_execution(self):
         self.resume(self.content)
+
+    def buffer_command(self, function):
+        self._buffer_commands[function.__name__] = function
+
+    def run_buffer_command(self, command_name):
+        self._buffer_commands[command_name]()
 
 
 class SelectionUI(AsyncCommand):
