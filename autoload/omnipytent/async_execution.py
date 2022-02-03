@@ -148,7 +148,7 @@ class INPUT_BUFFER(AsyncCommand):
             vim.command(
                 """
                 function b:.omnipytent_completeFunction(findstart, base) abort
-                    return %s.call("_complete", a:findstart, a:base)
+                    return %s.call("_complete_function_vim_api", a:findstart, a:base)
                 endfunction
                 """ % self.vim_obj)
             vim.command('setlocal completefunc=omnipytent#_callBufferCompleteFunction')
@@ -161,7 +161,7 @@ class INPUT_BUFFER(AsyncCommand):
                 command_name,
             ))
 
-    def _complete(self, findstart, base):
+    def _complete_function_vim_api(self, findstart, base):
         if findstart:
             return self.complete_findstart()
         else:
