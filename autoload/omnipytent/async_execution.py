@@ -3,6 +3,7 @@ import vim
 import sys
 import importlib
 import re
+import inspect
 
 try:
     from abc import ABC
@@ -14,7 +15,7 @@ except ImportError:
 from abc import abstractmethod
 
 from .execution import FN, VAR
-from .util import vim_repr, RawVim, input_list
+from .util import vim_repr, RawVim, input_list, poor_mans_async
 
 _IDX_COUNTER = count(1)
 
@@ -27,6 +28,13 @@ class AsyncExecutor(object):
     def __init__(self, invocation_generator):
         self.invocation_generator = invocation_generator
         self.yielded_command = None
+
+    @classmethod
+    def spawn(cls, generator):
+        if inspect.isgenerator(generator):
+            cls(poor_mans_async(generator)).run_next()
+        elif inspect.isgeneratorfunction(generator):
+            cls(poor_mans_async(generator())).run_next()
 
     def run_next(self):
         while True:
@@ -184,7 +192,8 @@ class INPUT_BUFFER(AsyncCommand):
         self._buffer_commands[function.__name__] = function
 
     def run_buffer_command(self, command_name):
-        self._buffer_commands[command_name]()
+        result = self._buffer_commands[command_name]()
+        AsyncExecutor.spawn(result)
 
 
 class SelectionUI(AsyncCommand):
