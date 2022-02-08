@@ -1,11 +1,12 @@
 import vim
 
 import os
+import inspect
 
 from .tasks_file import TasksFile, get_tasks_file
 from .tasks import invoke_with_dependencies, prompt_and_invoke_with_dependencies
 from .async_execution import AsyncExecutor, AsyncCommand
-from .util import vim_eval, vim_repr
+from .util import vim_eval, vim_repr, poor_mans_async
 
 
 def _tasks_file_path():
@@ -32,7 +33,12 @@ def _api_entry_point(command):
                 raise
         else:
             result = command.call(method, args)
-        vim.command('let l:return = %s' % vim_repr(result))
+        if inspect.isgenerator(result):
+            executor = AsyncExecutor(poor_mans_async(result))
+            vim.command('let l:return = 0')
+            executor.run_next()
+        else:
+            vim.command('let l:return = %s' % vim_repr(result))
     elif command == 'resume':
         idx = int(vim.eval('l:idx'))
         command = AsyncCommand.yielded[idx]

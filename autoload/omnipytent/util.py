@@ -225,6 +225,17 @@ def flatten_iterator(it):
         pass
 
 
+def poor_mans_async(generator):
+    generator = flatten_iterator(generator)
+    try:
+        yielded = next(generator)
+        while True:
+            yield yielded
+            yielded = generator.send(yielded._returned_value)
+    except StopIteration:
+        pass
+
+
 def is_generator_callable(obj):
     if inspect.isgeneratorfunction(obj):
         return True

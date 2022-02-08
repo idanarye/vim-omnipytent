@@ -3,7 +3,7 @@ import os
 from collections import OrderedDict
 import re
 
-from .util import flatten_iterator
+from .util import poor_mans_async
 
 _getargspec = getattr(inspect, 'getfullargspec', inspect.getargspec)
 
@@ -196,14 +196,9 @@ class Task(object):
     def _run_func_as_generator(self, *args, **kwargs):
         result = self._func_(*args, **kwargs)
         if inspect.isgenerator(result):
-            result = flatten_iterator(result)
-            try:
-                yielded = next(result)
-                while True:
-                    yield yielded
-                    yielded = result.send(yielded._returned_value)
-            except StopIteration:
-                pass
+            return poor_mans_async(result)
+        else:
+            return ()
 
     @property
     def _kwargs_for_func(self):
