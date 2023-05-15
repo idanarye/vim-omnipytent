@@ -5,7 +5,10 @@ import re
 
 from .util import poor_mans_async
 
-_getargspec = getattr(inspect, 'getfullargspec', inspect.getargspec)
+try:
+    _getargspec = inspect.getfullargspec
+except AttributeError:
+    _getargspec = inspect.getargspec
 
 
 class TaskMeta(type):
